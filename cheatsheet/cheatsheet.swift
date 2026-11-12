@@ -52,20 +52,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         window.ignoresMouseEvents = true
         window.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
 
-        // Dockと完全に同一の曇りガラス背景 (poppover + clear bg)
+        // 100% macOS純正の曇りガラス背景（独自の色・独自のボーダー枠は一切なし）
         visualEffect = NSVisualEffectView(frame: NSRect(x: 0, y: 0, width: initialWidth, height: initialHeight))
-        visualEffect.material = .popover
+        visualEffect.material = .windowBackground
         visualEffect.blendingMode = .behindWindow
         visualEffect.state = .active
         visualEffect.wantsLayer = true
-        // Rを大きめにする (height 80ptに対して cornerRadius 26pt〜28pt)
         let cornerRadius: CGFloat = 28
         visualEffect.layer?.cornerRadius = cornerRadius
         visualEffect.layer?.cornerCurve = .continuous
         visualEffect.layer?.masksToBounds = true
-        visualEffect.layer?.backgroundColor = .clear // 余計な黒塗りを排してDockネイティブの曇りガラスに
-        visualEffect.layer?.borderColor = NSColor(white: 1.0, alpha: 0.15).cgColor
-        visualEffect.layer?.borderWidth = 0.5
 
         stack = NSStackView(frame: NSRect(x: 14, y: 4, width: initialWidth - 28, height: initialHeight - 8))
         stack.orientation = .horizontal

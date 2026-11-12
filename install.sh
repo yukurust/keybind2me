@@ -22,7 +22,7 @@ mkdir -p "${HOME}/.config/aerospace"
 ln -sf "${TARGET_DIR}/aerospace/aerospace.toml" "${HOME}/.aerospace.toml"
 ln -sf "${TARGET_DIR}/aerospace/hud.swift" "${HOME}/.config/aerospace/hud.swift"
 
-# 3. Compile HUD binary
+# 3. Compile Notch HUD
 echo "==> Compiling Notch HUD (Swift)..."
 swiftc -O "${HOME}/.config/aerospace/hud.swift" -o "${HOME}/.config/aerospace/hud_bin"
 
@@ -33,13 +33,18 @@ exec "${HOME}/.config/aerospace/hud_bin" "$@"
 HUD_WRAPPER
 chmod +x "${HOME}/.config/aerospace/hud"
 
-# 4. Setup WezTerm config
+# 4. Compile CheatSheet (Dock Companion)
+echo "==> Compiling CheatSheet..."
+mkdir -p "${TARGET_DIR}/cheatsheet"
+swiftc -O "${TARGET_DIR}/cheatsheet/cheatsheet.swift" -o "${HOME}/.config/aerospace/cheatsheet"
+
+# 5. Setup WezTerm config
 echo "==> Configuring WezTerm..."
 mkdir -p "${HOME}/.config/wezterm"
 ln -sf "${TARGET_DIR}/wezterm/wezterm.lua" "${HOME}/.config/wezterm/wezterm.lua"
 ln -sf "${TARGET_DIR}/wezterm/keybinds.lua" "${HOME}/.config/wezterm/keybinds.lua"
 
-# 5. Reload AeroSpace if running
+# 6. Reload AeroSpace if running
 if command -v aerospace >/dev/null 2>&1; then
     echo "==> Reloading AeroSpace configuration..."
     aerospace reload-config || true
@@ -47,4 +52,4 @@ fi
 
 echo ""
 echo "✨ keybind2me installation complete!"
-echo "Enjoy your keyboard-driven workflow."
+echo "Run '${HOME}/.config/aerospace/cheatsheet &' to show the cheat sheet widget."

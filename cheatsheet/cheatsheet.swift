@@ -11,15 +11,25 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         guard let screen = NSScreen.main else { return }
 
-        // Dockが占有している正確な高さを取得 (通常 93pt)
+        let screenWidth = screen.frame.width // 2704pt
         let dockAreaHeight = screen.visibleFrame.minY > 0 ? screen.visibleFrame.minY : 93.0
-
         let bottomMargin: CGFloat = 8
         let height: CGFloat = dockAreaHeight - 12 // 81pt
-        let width: CGFloat = 490
         let cornerRadius: CGFloat = 22
 
-        let x: CGFloat = 14
+        // 画面左端からDockの左端までのスペースを埋める
+        // 画面左マージン: 14pt (Dockの右端・下端の浮きと合わせる)
+        let leftMargin: CGFloat = 14
+
+        // Dock左端までの距離 (引数で幅の上書きが可能: デフォルト 660pt)
+        let args = CommandLine.arguments
+        var targetWidth: CGFloat = 660
+        if args.count > 1, let w = Double(args[1]) {
+            targetWidth = CGFloat(w)
+        }
+
+        let width = targetWidth
+        let x: CGFloat = leftMargin
         let y: CGFloat = bottomMargin
 
         let windowRect = NSRect(x: x, y: y, width: width, height: height)
@@ -33,14 +43,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         window.isOpaque = false
         window.backgroundColor = .clear
-
-        // 最前面（すべてのウィンドウより前、Dockより前で完全に見切れないようにする）
         window.level = .screenSaver
-
         window.ignoresMouseEvents = true
         window.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
 
-        // Dock風のすりガラス背景
+        // Dockと完全に一致させた透過すりガラス背景
         let visualEffect = NSVisualEffectView(frame: NSRect(x: 0, y: 0, width: width, height: height))
         visualEffect.material = .hudWindow
         visualEffect.blendingMode = .behindWindow
@@ -52,33 +59,33 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         visualEffect.layer?.borderColor = NSColor(white: 1.0, alpha: 0.22).cgColor
         visualEffect.layer?.borderWidth = 1.0
 
-        // カプセル内部で上下の余白（パディング）を6ptにし、テキスト全体の高さを62ptに抑えて確実に収める
-        let stack = NSStackView(frame: NSRect(x: 18, y: 6, width: width - 36, height: height - 12))
+        // 横幅が広がったため、ゆったり左右に2セクション均等配置
+        let stack = NSStackView(frame: NSRect(x: 24, y: 6, width: width - 48, height: height - 12))
         stack.orientation = .horizontal
         stack.distribution = .fillEqually
-        stack.spacing = 18
+        stack.spacing = 28
 
         // 1. AeroSpace セクション
         let aeroView = makeSectionView(
-            title: "⌥ AeroSpace",
+            title: "⌥ AeroSpace (Workspace & Tiling)",
             titleColor: NSColor(red: 0.35, green: 0.78, blue: 0.98, alpha: 1.0),
             items: [
-                ("D/B/N/C/1", "WS移動"),
-                ("⇧+D/B..", "送る"),
-                ("H/J/K/L", "フォーカス"),
-                ("F / M", "Float / Full")
+                ("D/B/N/C/1", "WS移動 (Dev / Brow / Note / Chat / 1)"),
+                ("⇧+D/B..", "ウィンドウを該当WSへ送る"),
+                ("H / J / K / L", "ウィンドウフォーカス移動 (Vim)"),
+                ("F / M", "フローティング切替 / フルスクリーン")
             ]
         )
 
         // 2. WezTerm セクション (Leader: Ctrl+Q)
         let wezView = makeSectionView(
-            title: "⌃Q WezTerm",
+            title: "⌃Q WezTerm (Terminal & Pane)",
             titleColor: NSColor(red: 0.60, green: 0.90, blue: 0.45, alpha: 1.0),
             items: [
-                ("v / s", "縦/横分割"),
-                ("h/j/k/l", "ペイン移動"),
-                ("z", "最大化"),
-                ("w / c", "WS / タブ")
+                ("v / s", "ペインを縦分割 / 横分割"),
+                ("h / j / k / l", "ペイン間のフォーカス移動"),
+                ("z", "ペイン最大化・ズーム切替"),
+                ("w / c", "ワークスペース選択 / 新規タブ")
             ]
         )
 
@@ -96,10 +103,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let container = NSStackView()
         container.orientation = .vertical
         container.alignment = .leading
-        container.spacing = 1 // 行間を詰めて上部の見切れを解消
+        container.spacing = 2
 
         let header = NSTextField(labelWithString: title)
-        header.font = NSFont.systemFont(ofSize: 10.5, weight: .bold)
+        header.font = NSFont.systemFont(ofSize: 11, weight: .bold)
         header.textColor = titleColor
         header.isBezeled = false
         header.drawsBackground = false
@@ -108,17 +115,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         for (key, desc) in items {
             let row = NSStackView()
             row.orientation = .horizontal
-            row.spacing = 5
+            row.spacing = 8
 
             let keyLabel = NSTextField(labelWithString: key)
-            keyLabel.font = NSFont.monospacedSystemFont(ofSize: 9.5, weight: .bold)
+            keyLabel.font = NSFont.monospacedSystemFont(ofSize: 10, weight: .bold)
             keyLabel.textColor = NSColor.white
             keyLabel.isBezeled = false
             keyLabel.drawsBackground = false
 
             let descLabel = NSTextField(labelWithString: desc)
-            descLabel.font = NSFont.systemFont(ofSize: 9.5, weight: .regular)
-            descLabel.textColor = NSColor(white: 0.84, alpha: 1.0)
+            descLabel.font = NSFont.systemFont(ofSize: 10, weight: .regular)
+            descLabel.textColor = NSColor(white: 0.85, alpha: 1.0)
             descLabel.isBezeled = false
             descLabel.drawsBackground = false
 

@@ -9,16 +9,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var window: CheatSheetWindow!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        guard let screen = NSScreen.main else { return }
-
         // Dockと同じ高さ・すりガラス感
         let width: CGFloat = 480
         let height: CGFloat = 80
         let cornerRadius: CGFloat = 20
 
-        // 画面右下（画面右端から16pt、画面下端から14pt）
-        let screenWidth = screen.frame.width
-        let x: CGFloat = screenWidth - width - 16
+        // 画面左下（画面左端から16pt、画面下端から14pt）
+        let x: CGFloat = 16
         let y: CGFloat = 14
 
         let windowRect = NSRect(x: x, y: y, width: width, height: height)
@@ -32,7 +29,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         window.isOpaque = false
         window.backgroundColor = .clear
-        window.level = .screenSaver
+
+        // Dock(level 20)の直下(level 19)に設定することで、Dockの下に潜り込ませる
+        let dockLevel = Int(CGWindowLevelForKey(.dockWindow)) // 20
+        window.level = NSWindow.Level(rawValue: dockLevel - 1) // 19
+
         window.ignoresMouseEvents = true
         window.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
 

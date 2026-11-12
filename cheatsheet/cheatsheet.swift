@@ -52,15 +52,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         window.ignoresMouseEvents = true
         window.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
 
+        // Dock風のすりガラス背景
         visualEffect = NSVisualEffectView(frame: NSRect(x: 0, y: 0, width: initialWidth, height: initialHeight))
         visualEffect.material = .hudWindow
         visualEffect.blendingMode = .behindWindow
         visualEffect.state = .active
         visualEffect.wantsLayer = true
         visualEffect.layer?.cornerRadius = min(initialHeight / 2.0, 24)
+        visualEffect.layer?.cornerCurve = .continuous // Apple特有の角丸（Squircle / スーパートルツカーブ）
         visualEffect.layer?.masksToBounds = true
-        visualEffect.layer?.backgroundColor = NSColor(white: 0.11, alpha: 0.88).cgColor
-        visualEffect.layer?.borderColor = NSColor(white: 1.0, alpha: 0.22).cgColor
+        // 透明度をアップ（alpha: 0.88 -> 0.70 にしてよりクリアなすりガラスに）
+        visualEffect.layer?.backgroundColor = NSColor(white: 0.10, alpha: 0.70).cgColor
+        visualEffect.layer?.borderColor = NSColor(white: 1.0, alpha: 0.18).cgColor
         visualEffect.layer?.borderWidth = 1.0
 
         stack = NSStackView(frame: NSRect(x: 14, y: 4, width: initialWidth - 28, height: initialHeight - 8))
@@ -170,6 +173,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             window.setFrame(newFrame, display: true, animate: true)
             visualEffect.frame = NSRect(x: 0, y: 0, width: targetWidth, height: targetHeight)
             visualEffect.layer?.cornerRadius = min(targetHeight / 2.0, 24)
+            visualEffect.layer?.cornerCurve = .continuous
             stack.frame = NSRect(x: 14, y: 4, width: targetWidth - 28, height: targetHeight - 8)
         }
     }

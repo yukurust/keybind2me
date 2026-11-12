@@ -36,9 +36,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func setupWindow() {
         let initialWidth: CGFloat = 380
-        let initialHeight: CGFloat = 83
-        let initialBottomMargin: CGFloat = 10
-        let cornerRadius: CGFloat = initialHeight / 2.0 // 完全なピル/角丸カプセル
+        let initialHeight: CGFloat = 80
+        let initialBottomMargin: CGFloat = 6
 
         window = CheatSheetWindow(
             contentRect: NSRect(x: 0, y: initialBottomMargin, width: initialWidth, height: initialHeight),
@@ -58,13 +57,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         visualEffect.blendingMode = .behindWindow
         visualEffect.state = .active
         visualEffect.wantsLayer = true
-        visualEffect.layer?.cornerRadius = cornerRadius
+        visualEffect.layer?.cornerRadius = min(initialHeight / 2.0, 24)
         visualEffect.layer?.masksToBounds = true
         visualEffect.layer?.backgroundColor = NSColor(white: 0.11, alpha: 0.88).cgColor
         visualEffect.layer?.borderColor = NSColor(white: 1.0, alpha: 0.22).cgColor
         visualEffect.layer?.borderWidth = 1.0
 
-        stack = NSStackView(frame: NSRect(x: 14, y: 5, width: initialWidth - 28, height: initialHeight - 10))
+        stack = NSStackView(frame: NSRect(x: 14, y: 4, width: initialWidth - 28, height: initialHeight - 8))
         stack.orientation = .horizontal
         stack.distribution = .fillEqually
         stack.spacing = 16
@@ -104,7 +103,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    // Accessibility APIからDockの正確なジオメトリ（位置・サイズ）を1px単位で実測
     struct DockGeometry {
         let x: CGFloat
         let yFromBottom: CGFloat
@@ -128,7 +126,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     if AXValueGetValue(p as! AXValue, .cgPoint, &pos),
                        AXValueGetValue(s as! AXValue, .cgSize, &size),
                        pos.x > 0 && size.height > 20 {
-                        // macOS Cocoa座標系 (左下が原点) における下端マージン
                         let yFromBottom = screen.frame.height - (pos.y + size.height)
                         return DockGeometry(x: pos.x, yFromBottom: yFromBottom, height: size.height)
                     }
@@ -141,22 +138,28 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func updateLayout() {
         guard let screen = NSScreen.main else { return }
 
+        // ウィンドウやアプリの作業領域の下端（Dockの上限ライン = visibleFrame.minY）
+        let maxAllowedTop = screen.visibleFrame.minY
+
         let targetWidth: CGFloat
-        let targetHeight: CGFloat
-        let bottomMargin: CGFloat
+        var targetHeight: CGFloat
+        var bottomMargin: CGFloat
 
         if let geo = getExactDockGeometry() {
-            // 幅: 画面左端(0)からDock左端までピッタリ
             targetWidth = max(geo.x, 260)
-            // 高さと下端マージン: Dockの実測値と完全に一致
             targetHeight = geo.height
             bottomMargin = geo.yFromBottom
+
+            // 上端が境界線(maxAllowedTop)を超えて上に突き出ている場合は、上端がぴったり0px(一致)になるよう調整
+            let currentTop = bottomMargin + targetHeight
+            if currentTop > maxAllowedTop {
+                // 超えている分だけ下げる
+                bottomMargin = maxAllowedTop - targetHeight
+            }
         } else {
-            // フォールバック
-            let dockAreaHeight = screen.visibleFrame.minY > 0 ? screen.visibleFrame.minY : 93.0
-            targetHeight = dockAreaHeight - 10
-            bottomMargin = 5
             targetWidth = 380
+            targetHeight = max(maxAllowedTop - 6, 60)
+            bottomMargin = 6
         }
 
         let leftMargin: CGFloat = 0

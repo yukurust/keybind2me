@@ -15,7 +15,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         setupWindow()
         updateLayout()
 
-        // アプリ起動・終了時、または3秒ごとにDockの幅を再計算して動的に追従
+        // アプリ起動・終了時、または2秒ごとにDockの幅を完全実測して動的に追従
         NSWorkspace.shared.notificationCenter.addObserver(
             self,
             selector: #selector(handleAppChange),
@@ -29,19 +29,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             object: nil
         )
 
-        updateTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { [weak self] _ in
+        updateTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
             self?.updateLayout()
         }
     }
 
     func setupWindow() {
-        // Dockと全く同じ高さ・Y座標にする
         let height: CGFloat = 87
-        // 位置を1px下げる: 6pt - 1pt = 5pt
         let bottomMargin: CGFloat = 5
         let cornerRadius: CGFloat = 24
-        let initialWidth: CGFloat = 420
-        // 左のオフセットを 0 にする
+        let initialWidth: CGFloat = 380
         let leftMargin: CGFloat = 0
 
         window = CheatSheetWindow(
@@ -77,9 +74,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             title: "⌥ AeroSpace",
             titleColor: NSColor(red: 0.35, green: 0.78, blue: 0.98, alpha: 1.0),
             items: [
-                ("D/B/N/C/1", "WS移動 (Dev/Brow..)"),
+                ("D/B/N/C/1", "WS移動"),
                 ("⇧+D/B..", "該当WSへ送る"),
-                ("H/J/K/L", "フォーカス移動 (Vim)"),
+                ("H/J/K/L", "フォーカス移動"),
                 ("F / M", "Float / Full")
             ]
         )
@@ -108,61 +105,54 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    func calculateAvailableWidth() -> CGFloat {
-        guard let screen = NSScreen.main else { return 420 }
+    // macOS Accessibility APIからDockの正確な左端X座標を1ピクセル単位で取得
+    func getExactDockLeft() -> CGFloat? {
+        let apps = NSRunningApplication.runningApplications(withBundleIdentifier: "com.apple.dock")
+        guard let dockApp = apps.first else { return nil }
+        let axApp = AXUIElementCreateApplication(dockApp.processIdentifier)
+        var value: AnyObject?
+        if AXUIElementCopyAttributeValue(axApp, kAXChildrenAttribute as CFString, &value) == .success,
+           let children = value as? [AXUIElement] {
+            for child in children {
+                var posVal: AnyObject?
+                if AXUIElementCopyAttributeValue(child, kAXPositionAttribute as CFString, &posVal) == .success,
+                   let p = posVal {
+                    var pos = CGPoint.zero
+                    if AXValueGetValue(p as! AXValue, .cgPoint, &pos), pos.x > 0 {
+                        return pos.x
+                    }
+                }
+            }
+        }
+        return nil
+    }
 
+    func calculateAvailableWidth() -> CGFloat {
+        // Accessibility APIでDockの正確な左端X座標を取得
+        if let dockLeft = getExactDockLeft() {
+            // 左マージン0ptからDock左端までピッタリ埋める
+            // Dockとの間に適度な自然な隙間（8pt）だけ空ける
+            let gapToDock: CGFloat = 8.0
+            return max(dockLeft - gapToDock, 280)
+        }
+
+        // フォールバック（計算による推定）
+        guard let screen = NSScreen.main else { return 380 }
         let screenWidth = screen.frame.width
         let defaults = UserDefaults(suiteName: "com.apple.dock")
         let tilesize = CGFloat(defaults?.integer(forKey: "tilesize") ?? 67)
-
-        // 1. 固定登録アプリ
         let persistentApps = defaults?.array(forKey: "persistent-apps") as? [[String: Any]] ?? []
-        var persistentBundles = Set<String>()
-        for app in persistentApps {
-            if let tile = app["tile-data"] as? [String: Any], let bundle = tile["bundle-identifier"] as? String {
-                persistentBundles.insert(bundle.lowercased())
-            }
-        }
-
-        // 2. 登録外で起動中の通常アプリ
         let runningApps = NSWorkspace.shared.runningApplications.filter { $0.activationPolicy == .regular }
-        var nonPersistentRunningCount = 0
-        for app in runningApps {
-            let bundle = (app.bundleIdentifier ?? "").lowercased()
-            if bundle != "com.apple.finder" && !persistentBundles.contains(bundle) {
-                nonPersistentRunningCount += 1
-            }
-        }
-
-        // 3. フォルダ + ゴミ箱
-        let persistentOthers = defaults?.array(forKey: "persistent-others") ?? []
-        let othersCount = persistentOthers.count + 1
-
-        let totalItemCount = CGFloat(persistentApps.count + nonPersistentRunningCount + othersCount)
-
-        // Dock全体の横幅
-        let itemSpacing: CGFloat = 11.0
-        let separatorWidth: CGFloat = 20.0
-        let dockPadding: CGFloat = 30.0
-        let estimatedDockWidth = (totalItemCount * tilesize) + ((totalItemCount - 1) * itemSpacing) + separatorWidth + dockPadding
-
-        // 画面幅からDock幅を引いて2で割った「Dockの左端のX座標」
-        let dockLeft = (screenWidth - estimatedDockWidth) / 2.0
-
-        // 左端マージン(0pt) + 右側Dockとのクリアランス(24pt)
-        let leftMargin: CGFloat = 0.0
-        let gapToDock: CGFloat = 24.0
-        let availableWidth = max(dockLeft - leftMargin - gapToDock, 280)
-
-        return availableWidth
+        let total = CGFloat(persistentApps.count + runningApps.count + 2)
+        let estWidth = (total * tilesize) + (total * 10) + 40
+        let dockLeft = (screenWidth - estWidth) / 2.0
+        return max(dockLeft - 8.0, 280)
     }
 
     func updateLayout() {
         let targetWidth = calculateAvailableWidth()
         let height: CGFloat = 87
-        // 位置: 5pt
         let bottomMargin: CGFloat = 5
-        // 左オフセット: 0pt
         let leftMargin: CGFloat = 0
 
         let newFrame = NSRect(x: leftMargin, y: bottomMargin, width: targetWidth, height: height)

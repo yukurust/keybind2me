@@ -52,9 +52,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         window.ignoresMouseEvents = true
         window.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
 
-        // 100% macOS純正の曇りガラス背景（独自の色・独自のボーダー枠は一切なし）
+        // Dockと完全に同一のプライベートマテリアル (Dockマテリアル rawValue: 20)
         visualEffect = NSVisualEffectView(frame: NSRect(x: 0, y: 0, width: initialWidth, height: initialHeight))
-        visualEffect.material = .windowBackground
+        // rawValue 20 = macOS内部の kCGSWindowBackdropMaterialDock (Dock専用ブラー)
+        visualEffect.material = NSVisualEffectView.Material(rawValue: 20) ?? .fullScreenUI
         visualEffect.blendingMode = .behindWindow
         visualEffect.state = .active
         visualEffect.wantsLayer = true

@@ -139,7 +139,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         guard let screen = NSScreen.main else { return }
 
         // ウィンドウやアプリの作業領域の下端（Dockの上限ライン = visibleFrame.minY）
-        let maxAllowedTop = screen.visibleFrame.minY
+        // 上部に1pxの隙間をあけるため - 1.0
+        let maxAllowedTop = screen.visibleFrame.minY - 1.0
 
         let targetWidth: CGFloat
         var targetHeight: CGFloat
@@ -148,18 +149,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if let geo = getExactDockGeometry() {
             targetWidth = max(geo.x, 260)
             targetHeight = geo.height
-            bottomMargin = geo.yFromBottom
+            // bottomのgapを1px小さくする (geo.yFromBottom - 1.0)
+            bottomMargin = max(geo.yFromBottom - 1.0, 0)
 
-            // 上端が境界線(maxAllowedTop)を超えて上に突き出ている場合は、上端がぴったり0px(一致)になるよう調整
+            // 上端が maxAllowedTop (visibleFrame.minY - 1px) を超えないよう調整
             let currentTop = bottomMargin + targetHeight
             if currentTop > maxAllowedTop {
-                // 超えている分だけ下げる
                 bottomMargin = maxAllowedTop - targetHeight
             }
         } else {
             targetWidth = 380
-            targetHeight = max(maxAllowedTop - 6, 60)
-            bottomMargin = 6
+            targetHeight = max(maxAllowedTop - 5, 60)
+            bottomMargin = 5
         }
 
         let leftMargin: CGFloat = 0

@@ -37,8 +37,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func setupWindow() {
         // Dockと全く同じ高さ・Y座標にする
         let height: CGFloat = 87
-        // 位置を上方向に2pxずらす: 4pt + 2pt = 6pt
-        let bottomMargin: CGFloat = 6
+        // 位置を1px下げる: 6pt - 1pt = 5pt
+        let bottomMargin: CGFloat = 5
         let cornerRadius: CGFloat = 24
         let initialWidth: CGFloat = 420
         // 左のオフセットを 0 にする
@@ -160,8 +160,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func updateLayout() {
         let targetWidth = calculateAvailableWidth()
         let height: CGFloat = 87
-        // 上方向に2pxずらす: 6pt
-        let bottomMargin: CGFloat = 6
+        // 位置: 5pt
+        let bottomMargin: CGFloat = 5
         // 左オフセット: 0pt
         let leftMargin: CGFloat = 0
 

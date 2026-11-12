@@ -9,14 +9,23 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var window: CheatSheetWindow!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // Dockと同じ高さ・すりガラス感
-        let width: CGFloat = 480
-        let height: CGFloat = 80
-        let cornerRadius: CGFloat = 20
+        guard let screen = NSScreen.main else { return }
 
-        // 画面左下（画面左端から16pt、画面下端から14pt）
-        let x: CGFloat = 16
-        let y: CGFloat = 14
+        // Dockが占有している正確な高さを取得
+        // screen.visibleFrame.minY はDockの下端から上端までの総占有高さ (現在 93pt)
+        let dockAreaHeight = screen.visibleFrame.minY > 0 ? screen.visibleFrame.minY : 93.0
+
+        // macOS Dockの実際の形状設計:
+        // 画面下端から浮いているマージン: 約 8pt
+        // 上端の余白マージン: 約 4pt
+        // したがってDockカプセルの実高さ = dockAreaHeight - 12pt (93 - 12 = 81pt)
+        let bottomMargin: CGFloat = 8
+        let height: CGFloat = dockAreaHeight - 12
+        let width: CGFloat = 490
+        let cornerRadius: CGFloat = 22
+
+        let x: CGFloat = 14
+        let y: CGFloat = bottomMargin
 
         let windowRect = NSRect(x: x, y: y, width: width, height: height)
 
@@ -30,14 +39,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         window.isOpaque = false
         window.backgroundColor = .clear
 
-        // Dock(level 20)の直下(level 19)に設定することで、Dockの下に潜り込ませる
-        let dockLevel = Int(CGWindowLevelForKey(.dockWindow)) // 20
-        window.level = NSWindow.Level(rawValue: dockLevel - 1) // 19
+        // Dock (level 20) の直下レイヤー (level 19)
+        let dockLevel = Int(CGWindowLevelForKey(.dockWindow))
+        window.level = NSWindow.Level(rawValue: dockLevel - 1)
 
         window.ignoresMouseEvents = true
         window.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
 
-        // Dock風のすりガラス背景
+        // Dockと完全に一致させた透過すりガラス背景
         let visualEffect = NSVisualEffectView(frame: NSRect(x: 0, y: 0, width: width, height: height))
         visualEffect.material = .hudWindow
         visualEffect.blendingMode = .behindWindow
@@ -45,15 +54,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         visualEffect.wantsLayer = true
         visualEffect.layer?.cornerRadius = cornerRadius
         visualEffect.layer?.masksToBounds = true
-        visualEffect.layer?.backgroundColor = NSColor(white: 0.10, alpha: 0.88).cgColor
-        visualEffect.layer?.borderColor = NSColor(white: 1.0, alpha: 0.25).cgColor
-        visualEffect.layer?.borderWidth = 1.2
+        visualEffect.layer?.backgroundColor = NSColor(white: 0.11, alpha: 0.85).cgColor
+        visualEffect.layer?.borderColor = NSColor(white: 1.0, alpha: 0.22).cgColor
+        visualEffect.layer?.borderWidth = 1.0
 
-        // コンテンツ用の横並びStackView
-        let stack = NSStackView(frame: NSRect(x: 16, y: 8, width: width - 32, height: height - 16))
+        // コンテンツ用のStackView（上下中央配置）
+        let stack = NSStackView(frame: NSRect(x: 18, y: 8, width: width - 36, height: height - 16))
         stack.orientation = .horizontal
         stack.distribution = .fillEqually
-        stack.spacing = 16
+        stack.spacing = 18
 
         // 1. AeroSpace セクション
         let aeroView = makeSectionView(
@@ -115,7 +124,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
             let descLabel = NSTextField(labelWithString: desc)
             descLabel.font = NSFont.systemFont(ofSize: 10, weight: .regular)
-            descLabel.textColor = NSColor(white: 0.82, alpha: 1.0)
+            descLabel.textColor = NSColor(white: 0.84, alpha: 1.0)
             descLabel.isBezeled = false
             descLabel.drawsBackground = false
 

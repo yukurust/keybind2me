@@ -131,8 +131,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Accessibility APIでDockの正確な左端X座標を取得
         if let dockLeft = getExactDockLeft() {
             // 左マージン0ptからDock左端までピッタリ埋める
-            // 隙間を2pxに詰める（8px - 6px = 2px）
-            let gapToDock: CGFloat = 2.0
+            // マージン0（Dockの左端にピッタリ接続）
+            let gapToDock: CGFloat = 0.0
             return max(dockLeft - gapToDock, 280)
         }
 

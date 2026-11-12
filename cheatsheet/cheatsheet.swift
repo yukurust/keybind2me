@@ -11,16 +11,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         guard let screen = NSScreen.main else { return }
 
-        // Dockが占有している正確な高さを取得
-        // screen.visibleFrame.minY はDockの下端から上端までの総占有高さ (現在 93pt)
+        // Dockが占有している正確な高さを取得 (通常 93pt)
         let dockAreaHeight = screen.visibleFrame.minY > 0 ? screen.visibleFrame.minY : 93.0
 
-        // macOS Dockの実際の形状設計:
-        // 画面下端から浮いているマージン: 約 8pt
-        // 上端の余白マージン: 約 4pt
-        // したがってDockカプセルの実高さ = dockAreaHeight - 12pt (93 - 12 = 81pt)
         let bottomMargin: CGFloat = 8
-        let height: CGFloat = dockAreaHeight - 12
+        let height: CGFloat = dockAreaHeight - 12 // 81pt
         let width: CGFloat = 490
         let cornerRadius: CGFloat = 22
 
@@ -39,14 +34,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         window.isOpaque = false
         window.backgroundColor = .clear
 
-        // Dock (level 20) の直下レイヤー (level 19)
-        let dockLevel = Int(CGWindowLevelForKey(.dockWindow))
-        window.level = NSWindow.Level(rawValue: dockLevel - 1)
+        // 最前面（すべてのウィンドウより前、Dockより前で完全に見切れないようにする）
+        window.level = .screenSaver
 
         window.ignoresMouseEvents = true
         window.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
 
-        // Dockと完全に一致させた透過すりガラス背景
+        // Dock風のすりガラス背景
         let visualEffect = NSVisualEffectView(frame: NSRect(x: 0, y: 0, width: width, height: height))
         visualEffect.material = .hudWindow
         visualEffect.blendingMode = .behindWindow
@@ -54,12 +48,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         visualEffect.wantsLayer = true
         visualEffect.layer?.cornerRadius = cornerRadius
         visualEffect.layer?.masksToBounds = true
-        visualEffect.layer?.backgroundColor = NSColor(white: 0.11, alpha: 0.85).cgColor
+        visualEffect.layer?.backgroundColor = NSColor(white: 0.11, alpha: 0.88).cgColor
         visualEffect.layer?.borderColor = NSColor(white: 1.0, alpha: 0.22).cgColor
         visualEffect.layer?.borderWidth = 1.0
 
-        // コンテンツ用のStackView（上下中央配置）
-        let stack = NSStackView(frame: NSRect(x: 18, y: 8, width: width - 36, height: height - 16))
+        // カプセル内部で上下の余白（パディング）を6ptにし、テキスト全体の高さを62ptに抑えて確実に収める
+        let stack = NSStackView(frame: NSRect(x: 18, y: 6, width: width - 36, height: height - 12))
         stack.orientation = .horizontal
         stack.distribution = .fillEqually
         stack.spacing = 18
@@ -102,10 +96,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let container = NSStackView()
         container.orientation = .vertical
         container.alignment = .leading
-        container.spacing = 2
+        container.spacing = 1 // 行間を詰めて上部の見切れを解消
 
         let header = NSTextField(labelWithString: title)
-        header.font = NSFont.systemFont(ofSize: 11, weight: .bold)
+        header.font = NSFont.systemFont(ofSize: 10.5, weight: .bold)
         header.textColor = titleColor
         header.isBezeled = false
         header.drawsBackground = false
@@ -114,16 +108,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         for (key, desc) in items {
             let row = NSStackView()
             row.orientation = .horizontal
-            row.spacing = 6
+            row.spacing = 5
 
             let keyLabel = NSTextField(labelWithString: key)
-            keyLabel.font = NSFont.monospacedSystemFont(ofSize: 10, weight: .bold)
+            keyLabel.font = NSFont.monospacedSystemFont(ofSize: 9.5, weight: .bold)
             keyLabel.textColor = NSColor.white
             keyLabel.isBezeled = false
             keyLabel.drawsBackground = false
 
             let descLabel = NSTextField(labelWithString: desc)
-            descLabel.font = NSFont.systemFont(ofSize: 10, weight: .regular)
+            descLabel.font = NSFont.systemFont(ofSize: 9.5, weight: .regular)
             descLabel.textColor = NSColor(white: 0.84, alpha: 1.0)
             descLabel.isBezeled = false
             descLabel.drawsBackground = false

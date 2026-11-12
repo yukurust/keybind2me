@@ -52,19 +52,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         window.ignoresMouseEvents = true
         window.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
 
-        // Dock風のすりガラス背景
+        // Dockと完全に同一の曇りガラス背景 (poppover + clear bg)
         visualEffect = NSVisualEffectView(frame: NSRect(x: 0, y: 0, width: initialWidth, height: initialHeight))
-        visualEffect.material = .hudWindow
+        visualEffect.material = .popover
         visualEffect.blendingMode = .behindWindow
         visualEffect.state = .active
         visualEffect.wantsLayer = true
-        visualEffect.layer?.cornerRadius = min(initialHeight / 2.0, 24)
-        visualEffect.layer?.cornerCurve = .continuous // Apple特有の角丸（Squircle / スーパートルツカーブ）
+        // Rを大きめにする (height 80ptに対して cornerRadius 26pt〜28pt)
+        let cornerRadius: CGFloat = 28
+        visualEffect.layer?.cornerRadius = cornerRadius
+        visualEffect.layer?.cornerCurve = .continuous
         visualEffect.layer?.masksToBounds = true
-        // 透明度をアップ（alpha: 0.88 -> 0.70 にしてよりクリアなすりガラスに）
-        visualEffect.layer?.backgroundColor = NSColor(white: 0.10, alpha: 0.70).cgColor
-        visualEffect.layer?.borderColor = NSColor(white: 1.0, alpha: 0.18).cgColor
-        visualEffect.layer?.borderWidth = 1.0
+        visualEffect.layer?.backgroundColor = .clear // 余計な黒塗りを排してDockネイティブの曇りガラスに
+        visualEffect.layer?.borderColor = NSColor(white: 1.0, alpha: 0.15).cgColor
+        visualEffect.layer?.borderWidth = 0.5
 
         stack = NSStackView(frame: NSRect(x: 14, y: 4, width: initialWidth - 28, height: initialHeight - 8))
         stack.orientation = .horizontal
@@ -172,7 +173,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if window.frame != newFrame {
             window.setFrame(newFrame, display: true, animate: true)
             visualEffect.frame = NSRect(x: 0, y: 0, width: targetWidth, height: targetHeight)
-            visualEffect.layer?.cornerRadius = min(targetHeight / 2.0, 24)
+            let cornerRadius: CGFloat = 28
+            visualEffect.layer?.cornerRadius = cornerRadius
             visualEffect.layer?.cornerCurve = .continuous
             stack.frame = NSRect(x: 14, y: 4, width: targetWidth - 28, height: targetHeight - 8)
         }

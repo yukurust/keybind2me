@@ -15,7 +15,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         setupWindow()
         updateLayout()
 
-        // アプリ起動・終了時、または2秒ごとにDockの幅を完全実測して動的に追従
+        // アプリ起動・終了時、または1.5秒ごとにDockの形状を完全実測して動的追従
         NSWorkspace.shared.notificationCenter.addObserver(
             self,
             selector: #selector(handleAppChange),
@@ -29,20 +29,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             object: nil
         )
 
-        updateTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
+        updateTimer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] _ in
             self?.updateLayout()
         }
     }
 
     func setupWindow() {
-        let height: CGFloat = 87
-        let bottomMargin: CGFloat = 5
-        let cornerRadius: CGFloat = 24
         let initialWidth: CGFloat = 380
-        let leftMargin: CGFloat = 0
+        let initialHeight: CGFloat = 83
+        let initialBottomMargin: CGFloat = 10
+        let cornerRadius: CGFloat = initialHeight / 2.0 // 完全なピル/角丸カプセル
 
         window = CheatSheetWindow(
-            contentRect: NSRect(x: leftMargin, y: bottomMargin, width: initialWidth, height: height),
+            contentRect: NSRect(x: 0, y: initialBottomMargin, width: initialWidth, height: initialHeight),
             styleMask: [.borderless],
             backing: .buffered,
             defer: false
@@ -54,7 +53,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         window.ignoresMouseEvents = true
         window.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
 
-        visualEffect = NSVisualEffectView(frame: NSRect(x: 0, y: 0, width: initialWidth, height: height))
+        visualEffect = NSVisualEffectView(frame: NSRect(x: 0, y: 0, width: initialWidth, height: initialHeight))
         visualEffect.material = .hudWindow
         visualEffect.blendingMode = .behindWindow
         visualEffect.state = .active
@@ -65,7 +64,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         visualEffect.layer?.borderColor = NSColor(white: 1.0, alpha: 0.22).cgColor
         visualEffect.layer?.borderWidth = 1.0
 
-        stack = NSStackView(frame: NSRect(x: 14, y: 7, width: initialWidth - 28, height: height - 14))
+        stack = NSStackView(frame: NSRect(x: 14, y: 5, width: initialWidth - 28, height: initialHeight - 10))
         stack.orientation = .horizontal
         stack.distribution = .fillEqually
         stack.spacing = 16
@@ -105,8 +104,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    // macOS Accessibility APIからDockの正確な左端X座標を1ピクセル単位で取得
-    func getExactDockLeft() -> CGFloat? {
+    // Accessibility APIからDockの正確なジオメトリ（位置・サイズ）を1px単位で実測
+    struct DockGeometry {
+        let x: CGFloat
+        let yFromBottom: CGFloat
+        let height: CGFloat
+    }
+
+    func getExactDockGeometry() -> DockGeometry? {
+        guard let screen = NSScreen.main else { return nil }
         let apps = NSRunningApplication.runningApplications(withBundleIdentifier: "com.apple.dock")
         guard let dockApp = apps.first else { return nil }
         let axApp = AXUIElementCreateApplication(dockApp.processIdentifier)
@@ -114,12 +120,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if AXUIElementCopyAttributeValue(axApp, kAXChildrenAttribute as CFString, &value) == .success,
            let children = value as? [AXUIElement] {
             for child in children {
-                var posVal: AnyObject?
+                var posVal: AnyObject?, sizeVal: AnyObject?
                 if AXUIElementCopyAttributeValue(child, kAXPositionAttribute as CFString, &posVal) == .success,
-                   let p = posVal {
-                    var pos = CGPoint.zero
-                    if AXValueGetValue(p as! AXValue, .cgPoint, &pos), pos.x > 0 {
-                        return pos.x
+                   AXUIElementCopyAttributeValue(child, kAXSizeAttribute as CFString, &sizeVal) == .success,
+                   let p = posVal, let s = sizeVal {
+                    var pos = CGPoint.zero, size = CGSize.zero
+                    if AXValueGetValue(p as! AXValue, .cgPoint, &pos),
+                       AXValueGetValue(s as! AXValue, .cgSize, &size),
+                       pos.x > 0 && size.height > 20 {
+                        // macOS Cocoa座標系 (左下が原点) における下端マージン
+                        let yFromBottom = screen.frame.height - (pos.y + size.height)
+                        return DockGeometry(x: pos.x, yFromBottom: yFromBottom, height: size.height)
                     }
                 }
             }
@@ -127,40 +138,35 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return nil
     }
 
-    func calculateAvailableWidth() -> CGFloat {
-        // Accessibility APIでDockの正確な左端X座標を取得
-        if let dockLeft = getExactDockLeft() {
-            // 左マージン0ptからDock左端までピッタリ埋める
-            // マージン0（Dockの左端にピッタリ接続）
-            let gapToDock: CGFloat = 0.0
-            return max(dockLeft - gapToDock, 280)
+    func updateLayout() {
+        guard let screen = NSScreen.main else { return }
+
+        let targetWidth: CGFloat
+        let targetHeight: CGFloat
+        let bottomMargin: CGFloat
+
+        if let geo = getExactDockGeometry() {
+            // 幅: 画面左端(0)からDock左端までピッタリ
+            targetWidth = max(geo.x, 260)
+            // 高さと下端マージン: Dockの実測値と完全に一致
+            targetHeight = geo.height
+            bottomMargin = geo.yFromBottom
+        } else {
+            // フォールバック
+            let dockAreaHeight = screen.visibleFrame.minY > 0 ? screen.visibleFrame.minY : 93.0
+            targetHeight = dockAreaHeight - 10
+            bottomMargin = 5
+            targetWidth = 380
         }
 
-        // フォールバック（計算による推定）
-        guard let screen = NSScreen.main else { return 380 }
-        let screenWidth = screen.frame.width
-        let defaults = UserDefaults(suiteName: "com.apple.dock")
-        let tilesize = CGFloat(defaults?.integer(forKey: "tilesize") ?? 67)
-        let persistentApps = defaults?.array(forKey: "persistent-apps") as? [[String: Any]] ?? []
-        let runningApps = NSWorkspace.shared.runningApplications.filter { $0.activationPolicy == .regular }
-        let total = CGFloat(persistentApps.count + runningApps.count + 2)
-        let estWidth = (total * tilesize) + (total * 10) + 40
-        let dockLeft = (screenWidth - estWidth) / 2.0
-        return max(dockLeft - 8.0, 280)
-    }
-
-    func updateLayout() {
-        let targetWidth = calculateAvailableWidth()
-        let height: CGFloat = 87
-        let bottomMargin: CGFloat = 5
         let leftMargin: CGFloat = 0
-
-        let newFrame = NSRect(x: leftMargin, y: bottomMargin, width: targetWidth, height: height)
+        let newFrame = NSRect(x: leftMargin, y: bottomMargin, width: targetWidth, height: targetHeight)
 
         if window.frame != newFrame {
             window.setFrame(newFrame, display: true, animate: true)
-            visualEffect.frame = NSRect(x: 0, y: 0, width: targetWidth, height: height)
-            stack.frame = NSRect(x: 14, y: 7, width: targetWidth - 28, height: height - 14)
+            visualEffect.frame = NSRect(x: 0, y: 0, width: targetWidth, height: targetHeight)
+            visualEffect.layer?.cornerRadius = min(targetHeight / 2.0, 24)
+            stack.frame = NSRect(x: 14, y: 4, width: targetWidth - 28, height: targetHeight - 8)
         }
     }
 
@@ -168,10 +174,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let container = NSStackView()
         container.orientation = .vertical
         container.alignment = .leading
-        container.spacing = 1.5
+        container.spacing = 1.2
 
         let header = NSTextField(labelWithString: title)
-        header.font = NSFont.systemFont(ofSize: 11, weight: .bold)
+        header.font = NSFont.systemFont(ofSize: 10.5, weight: .bold)
         header.textColor = titleColor
         header.isBezeled = false
         header.drawsBackground = false
@@ -183,13 +189,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             row.spacing = 6
 
             let keyLabel = NSTextField(labelWithString: key)
-            keyLabel.font = NSFont.monospacedSystemFont(ofSize: 10, weight: .bold)
+            keyLabel.font = NSFont.monospacedSystemFont(ofSize: 9.5, weight: .bold)
             keyLabel.textColor = NSColor.white
             keyLabel.isBezeled = false
             keyLabel.drawsBackground = false
 
             let descLabel = NSTextField(labelWithString: desc)
-            descLabel.font = NSFont.systemFont(ofSize: 10, weight: .regular)
+            descLabel.font = NSFont.systemFont(ofSize: 9.5, weight: .regular)
             descLabel.textColor = NSColor(white: 0.85, alpha: 1.0)
             descLabel.isBezeled = false
             descLabel.drawsBackground = false

@@ -37,13 +37,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func setupWindow() {
         guard let screen = NSScreen.main else { return }
 
-        let dockAreaHeight = screen.visibleFrame.minY > 0 ? screen.visibleFrame.minY : 93.0
-        let bottomMargin: CGFloat = 8
-        let height: CGFloat = dockAreaHeight - 12
-        let cornerRadius: CGFloat = 22
+        // Dockと全く同じ高さ・Y座標にする
+        // Dockカプセル実高さ: 87pt, 下端マージン: 4pt
+        let height: CGFloat = 87
+        let bottomMargin: CGFloat = 4
+        let cornerRadius: CGFloat = 24
+        let initialWidth: CGFloat = 420
+        let leftMargin: CGFloat = 4
 
         window = CheatSheetWindow(
-            contentRect: NSRect(x: 14, y: bottomMargin, width: 440, height: height),
+            contentRect: NSRect(x: leftMargin, y: bottomMargin, width: initialWidth, height: height),
             styleMask: [.borderless],
             backing: .buffered,
             defer: false
@@ -55,7 +58,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         window.ignoresMouseEvents = true
         window.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
 
-        visualEffect = NSVisualEffectView(frame: NSRect(x: 0, y: 0, width: 440, height: height))
+        visualEffect = NSVisualEffectView(frame: NSRect(x: 0, y: 0, width: initialWidth, height: height))
         visualEffect.material = .hudWindow
         visualEffect.blendingMode = .behindWindow
         visualEffect.state = .active
@@ -66,7 +69,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         visualEffect.layer?.borderColor = NSColor(white: 1.0, alpha: 0.22).cgColor
         visualEffect.layer?.borderWidth = 1.0
 
-        stack = NSStackView(frame: NSRect(x: 18, y: 6, width: 440 - 36, height: height - 12))
+        stack = NSStackView(frame: NSRect(x: 16, y: 7, width: initialWidth - 32, height: height - 14))
         stack.orientation = .horizontal
         stack.distribution = .fillEqually
         stack.spacing = 16
@@ -107,7 +110,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func calculateAvailableWidth() -> CGFloat {
-        guard let screen = NSScreen.main else { return 440 }
+        guard let screen = NSScreen.main else { return 420 }
 
         let screenWidth = screen.frame.width
         let defaults = UserDefaults(suiteName: "com.apple.dock")
@@ -138,39 +141,35 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         let totalItemCount = CGFloat(persistentApps.count + nonPersistentRunningCount + othersCount)
 
-        // Dock全体の横幅を推定:
-        // (アイテム数 * タイルサイズ) + (アイテム間の隙間) + 仕切り線(約18pt) + 左右外枠パディング(約28pt)
-        let itemSpacing: CGFloat = 10.0
-        let separatorWidth: CGFloat = 18.0
-        let dockPadding: CGFloat = 28.0
+        // Dock全体の横幅
+        let itemSpacing: CGFloat = 11.0
+        let separatorWidth: CGFloat = 20.0
+        let dockPadding: CGFloat = 30.0
         let estimatedDockWidth = (totalItemCount * tilesize) + ((totalItemCount - 1) * itemSpacing) + separatorWidth + dockPadding
 
-        // 画面幅からDock幅を引いて2で割ったものが「Dockの左端のX座標（左側の空きスペース）」
-        let dockLeftSpace = (screenWidth - estimatedDockWidth) / 2.0
+        // 画面幅からDock幅を引いて2で割った「Dockの左端のX座標」
+        let dockLeft = (screenWidth - estimatedDockWidth) / 2.0
 
-        // チートシートの左マージン(14pt) + Dockとの間のクリアランス余白(14pt)を確保
-        let leftMargin: CGFloat = 14.0
-        let gapToDock: CGFloat = 14.0
-        let availableWidth = max(dockLeftSpace - leftMargin - gapToDock, 300)
+        // 左端マージン(4pt) + 右側Dockとのクリアランス(被りを防止するためしっかり余白を確保: 24pt)
+        let leftMargin: CGFloat = 4.0
+        let gapToDock: CGFloat = 24.0
+        let availableWidth = max(dockLeft - leftMargin - gapToDock, 280)
 
         return availableWidth
     }
 
     func updateLayout() {
-        guard let screen = NSScreen.main else { return }
-
         let targetWidth = calculateAvailableWidth()
-        let dockAreaHeight = screen.visibleFrame.minY > 0 ? screen.visibleFrame.minY : 93.0
-        let bottomMargin: CGFloat = 8
-        let height: CGFloat = dockAreaHeight - 12
-        let leftMargin: CGFloat = 14
+        let height: CGFloat = 87
+        let bottomMargin: CGFloat = 4
+        let leftMargin: CGFloat = 4
 
         let newFrame = NSRect(x: leftMargin, y: bottomMargin, width: targetWidth, height: height)
 
         if window.frame != newFrame {
             window.setFrame(newFrame, display: true, animate: true)
             visualEffect.frame = NSRect(x: 0, y: 0, width: targetWidth, height: height)
-            stack.frame = NSRect(x: 18, y: 6, width: targetWidth - 36, height: height - 12)
+            stack.frame = NSRect(x: 16, y: 7, width: targetWidth - 32, height: height - 14)
         }
     }
 
@@ -178,10 +177,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let container = NSStackView()
         container.orientation = .vertical
         container.alignment = .leading
-        container.spacing = 1
+        container.spacing = 1.5
 
         let header = NSTextField(labelWithString: title)
-        header.font = NSFont.systemFont(ofSize: 10.5, weight: .bold)
+        header.font = NSFont.systemFont(ofSize: 11, weight: .bold)
         header.textColor = titleColor
         header.isBezeled = false
         header.drawsBackground = false
@@ -193,13 +192,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             row.spacing = 6
 
             let keyLabel = NSTextField(labelWithString: key)
-            keyLabel.font = NSFont.monospacedSystemFont(ofSize: 9.5, weight: .bold)
+            keyLabel.font = NSFont.monospacedSystemFont(ofSize: 10, weight: .bold)
             keyLabel.textColor = NSColor.white
             keyLabel.isBezeled = false
             keyLabel.drawsBackground = false
 
             let descLabel = NSTextField(labelWithString: desc)
-            descLabel.font = NSFont.systemFont(ofSize: 9.5, weight: .regular)
+            descLabel.font = NSFont.systemFont(ofSize: 10, weight: .regular)
             descLabel.textColor = NSColor(white: 0.85, alpha: 1.0)
             descLabel.isBezeled = false
             descLabel.drawsBackground = false

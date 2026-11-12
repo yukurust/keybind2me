@@ -1,0 +1,133 @@
+# ==============================================================================
+# AeroSpace Configuration
+# ==============================================================================
+
+start-at-login = true
+
+# ワークスペース切り替え時のフック（画面左上HUD表示）
+exec-on-workspace-change = [
+  '/bin/bash', '-c',
+  '/Users/yshi112358/.config/aerospace/hud "$AEROSPACE_FOCUSED_WORKSPACE"'
+]
+
+# ------------------------------------------------------------------------------
+# キーバインド設定
+# ------------------------------------------------------------------------------
+[mode.main.binding]
+
+# ワークスペース切り替え (Option + キー)
+alt-d = 'workspace Development'
+alt-b = 'workspace Browser'
+alt-n = 'workspace Note'
+alt-c = 'workspace Chat'
+alt-1 = 'workspace 1'
+
+# ウィンドウをワークスペースへ移動 (Option + Shift + キー)
+alt-shift-d = 'move-node-to-workspace Development'
+alt-shift-b = 'move-node-to-workspace Browser'
+alt-shift-n = 'move-node-to-workspace Note'
+alt-shift-c = 'move-node-to-workspace Chat'
+alt-shift-1 = 'move-node-to-workspace 1'
+
+# ウィンドウフォーカス移動 (Vimキーバインド)
+alt-h = 'focus left'
+alt-j = 'focus down'
+alt-k = 'focus up'
+alt-l = 'focus right'
+
+# ウィンドウ位置入れ替え
+alt-shift-h = 'move left'
+alt-shift-j = 'move down'
+alt-shift-k = 'move up'
+alt-shift-l = 'move right'
+
+# フローティング切り替え・フルスクリーン
+alt-f = 'layout floating tiling'
+alt-m = 'fullscreen'
+
+# ------------------------------------------------------------------------------
+# アプリ自動振り分け (on-window-detected)
+# ------------------------------------------------------------------------------
+
+# --- Finder: オーバーレイ（フローティング）表示 ---
+[[on-window-detected]]
+if.app-id = 'com.apple.finder'
+run = 'layout floating'
+
+# 設定等のダイアログもフローティング
+[[on-window-detected]]
+if.app-id = 'com.apple.systempreferences'
+run = 'layout floating'
+
+# --- 1. Development ---
+[[on-window-detected]]
+if.app-id = 'com.todesktop.230313mzl4w4u92' # Cursor
+run = 'move-node-to-workspace Development'
+
+[[on-window-detected]]
+if.app-id = 'com.google.antigravity'        # Antigravity
+run = 'move-node-to-workspace Development'
+
+[[on-window-detected]]
+if.app-id = 'com.github.wez.wezterm'         # WezTerm
+run = 'move-node-to-workspace Development'
+
+[[on-window-detected]]
+if.app-id = 'com.linear'                     # Linear
+run = 'move-node-to-workspace Development'
+
+[[on-window-detected]]
+if.app-id = 'com.stablyai.orca'              # Orca
+run = 'move-node-to-workspace Development'
+
+# --- 2. Browser ---
+[[on-window-detected]]
+if.app-id = 'app.zen-browser.zen'            # Zen Browser
+run = 'move-node-to-workspace Browser'
+
+[[on-window-detected]]
+if.app-id = 'com.spotify.client'             # Spotify
+run = 'move-node-to-workspace Browser'
+
+[[on-window-detected]]
+if.app-id = 'com.google.Chrome'              # Google Chrome
+run = 'move-node-to-workspace Browser'
+
+[[on-window-detected]]
+if.app-id = 'com.apple.Safari'               # Safari
+run = 'move-node-to-workspace Browser'
+
+# --- 3. Note ---
+[[on-window-detected]]
+if.app-id = 'md.obsidian'                    # Obsidian
+run = 'move-node-to-workspace Note'
+
+[[on-window-detected]]
+if.app-id = 'com.apple.Notes'                # Apple Notes (メモ)
+run = 'move-node-to-workspace Note'
+
+# --- 4. Chat ---
+[[on-window-detected]]
+if.app-id = 'com.tinyspeck.slackmacgap'      # Slack
+run = 'move-node-to-workspace Chat'
+
+[[on-window-detected]]
+if.app-id = 'com.hnc.Discord'                # Discord
+run = 'move-node-to-workspace Chat'
+
+[[on-window-detected]]
+if.app-id = 'jp.naver.line.mac'              # LINE
+run = 'move-node-to-workspace Chat'
+
+[[on-window-detected]]
+if.app-id = 'com.openai.codex'               # ChatGPT
+run = 'move-node-to-workspace Chat'
+
+[[on-window-detected]]
+if.app-id = 'com.anysphere.sand'             # Grok Bot
+run = 'move-node-to-workspace Chat'
+
+# --- 5. 未振り分け・その他アプリ -> ワークスペース '1' ---
+[[on-window-detected]]
+if.app-id = '.*'
+run = 'move-node-to-workspace 1'

@@ -12,14 +12,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         guard let screen = NSScreen.main else { return }
 
         // Dockと同じ高さ・すりガラス感
-        let dockHeight: CGFloat = screen.visibleFrame.minY > 0 ? screen.visibleFrame.minY - 14 : 76
-        let height: CGFloat = max(dockHeight, 72)
-        let width: CGFloat = 460
+        let width: CGFloat = 480
+        let height: CGFloat = 80
         let cornerRadius: CGFloat = 20
 
-        // 画面左下（Dockと同じY位置・左余白14pt）
-        let x: CGFloat = 16
-        let y: CGFloat = 8
+        // 画面右下（画面右端から16pt、画面下端から14pt）
+        let screenWidth = screen.frame.width
+        let x: CGFloat = screenWidth - width - 16
+        let y: CGFloat = 14
 
         let windowRect = NSRect(x: x, y: y, width: width, height: height)
 
@@ -32,8 +32,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         window.isOpaque = false
         window.backgroundColor = .clear
-        window.level = .floating
-        window.ignoresMouseEvents = true // 操作の邪魔にならないようクリック透過
+        window.level = .screenSaver
+        window.ignoresMouseEvents = true
         window.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
 
         // Dock風のすりガラス背景
@@ -44,11 +44,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         visualEffect.wantsLayer = true
         visualEffect.layer?.cornerRadius = cornerRadius
         visualEffect.layer?.masksToBounds = true
-        visualEffect.layer?.backgroundColor = NSColor(white: 0.12, alpha: 0.78).cgColor
-        visualEffect.layer?.borderColor = NSColor(white: 1.0, alpha: 0.20).cgColor
-        visualEffect.layer?.borderWidth = 1.0
+        visualEffect.layer?.backgroundColor = NSColor(white: 0.10, alpha: 0.88).cgColor
+        visualEffect.layer?.borderColor = NSColor(white: 1.0, alpha: 0.25).cgColor
+        visualEffect.layer?.borderWidth = 1.2
 
-        // コンテンツ用のStackView
+        // コンテンツ用の横並びStackView
         let stack = NSStackView(frame: NSRect(x: 16, y: 8, width: width - 32, height: height - 16))
         stack.orientation = .horizontal
         stack.distribution = .fillEqually
@@ -57,6 +57,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // 1. AeroSpace セクション
         let aeroView = makeSectionView(
             title: "⌥ AeroSpace",
+            titleColor: NSColor(red: 0.35, green: 0.78, blue: 0.98, alpha: 1.0),
             items: [
                 ("D/B/N/C/1", "WS移動"),
                 ("⇧+D/B..", "送る"),
@@ -68,6 +69,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // 2. WezTerm セクション (Leader: Ctrl+Q)
         let wezView = makeSectionView(
             title: "⌃Q WezTerm",
+            titleColor: NSColor(red: 0.60, green: 0.90, blue: 0.45, alpha: 1.0),
             items: [
                 ("v / s", "縦/横分割"),
                 ("h/j/k/l", "ペイン移動"),
@@ -81,10 +83,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         visualEffect.addSubview(stack)
         window.contentView = visualEffect
+
+        window.alphaValue = 1.0
         window.orderFrontRegardless()
     }
 
-    func makeSectionView(title: String, items: [(String, String)]) -> NSView {
+    func makeSectionView(title: String, titleColor: NSColor, items: [(String, String)]) -> NSView {
         let container = NSStackView()
         container.orientation = .vertical
         container.alignment = .leading
@@ -92,7 +96,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         let header = NSTextField(labelWithString: title)
         header.font = NSFont.systemFont(ofSize: 11, weight: .bold)
-        header.textColor = NSColor(red: 0.45, green: 0.82, blue: 1.0, alpha: 1.0)
+        header.textColor = titleColor
+        header.isBezeled = false
+        header.drawsBackground = false
         container.addArrangedSubview(header)
 
         for (key, desc) in items {
@@ -101,12 +107,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             row.spacing = 6
 
             let keyLabel = NSTextField(labelWithString: key)
-            keyLabel.font = NSFont.monospacedSystemFont(ofSize: 10, weight: .semibold)
+            keyLabel.font = NSFont.monospacedSystemFont(ofSize: 10, weight: .bold)
             keyLabel.textColor = NSColor.white
+            keyLabel.isBezeled = false
+            keyLabel.drawsBackground = false
 
             let descLabel = NSTextField(labelWithString: desc)
             descLabel.font = NSFont.systemFont(ofSize: 10, weight: .regular)
             descLabel.textColor = NSColor(white: 0.82, alpha: 1.0)
+            descLabel.isBezeled = false
+            descLabel.drawsBackground = false
 
             row.addArrangedSubview(keyLabel)
             row.addArrangedSubview(descLabel)

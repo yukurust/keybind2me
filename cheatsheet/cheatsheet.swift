@@ -35,15 +35,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func setupWindow() {
-        guard let screen = NSScreen.main else { return }
-
         // Dockと全く同じ高さ・Y座標にする
-        // Dockカプセル実高さ: 87pt, 下端マージン: 4pt
         let height: CGFloat = 87
-        let bottomMargin: CGFloat = 4
+        // 位置を上方向に2pxずらす: 4pt + 2pt = 6pt
+        let bottomMargin: CGFloat = 6
         let cornerRadius: CGFloat = 24
         let initialWidth: CGFloat = 420
-        let leftMargin: CGFloat = 4
+        // 左のオフセットを 0 にする
+        let leftMargin: CGFloat = 0
 
         window = CheatSheetWindow(
             contentRect: NSRect(x: leftMargin, y: bottomMargin, width: initialWidth, height: height),
@@ -69,7 +68,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         visualEffect.layer?.borderColor = NSColor(white: 1.0, alpha: 0.22).cgColor
         visualEffect.layer?.borderWidth = 1.0
 
-        stack = NSStackView(frame: NSRect(x: 16, y: 7, width: initialWidth - 32, height: height - 14))
+        stack = NSStackView(frame: NSRect(x: 14, y: 7, width: initialWidth - 28, height: height - 14))
         stack.orientation = .horizontal
         stack.distribution = .fillEqually
         stack.spacing = 16
@@ -125,7 +124,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
-        // 2. 登録外で起動中の通常アプリ（Dockにアイコンが表示されるもの）
+        // 2. 登録外で起動中の通常アプリ
         let runningApps = NSWorkspace.shared.runningApplications.filter { $0.activationPolicy == .regular }
         var nonPersistentRunningCount = 0
         for app in runningApps {
@@ -135,7 +134,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
-        // 3. フォルダ(persistent-others) + ゴミ箱(1)
+        // 3. フォルダ + ゴミ箱
         let persistentOthers = defaults?.array(forKey: "persistent-others") ?? []
         let othersCount = persistentOthers.count + 1
 
@@ -150,8 +149,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // 画面幅からDock幅を引いて2で割った「Dockの左端のX座標」
         let dockLeft = (screenWidth - estimatedDockWidth) / 2.0
 
-        // 左端マージン(4pt) + 右側Dockとのクリアランス(被りを防止するためしっかり余白を確保: 24pt)
-        let leftMargin: CGFloat = 4.0
+        // 左端マージン(0pt) + 右側Dockとのクリアランス(24pt)
+        let leftMargin: CGFloat = 0.0
         let gapToDock: CGFloat = 24.0
         let availableWidth = max(dockLeft - leftMargin - gapToDock, 280)
 
@@ -161,15 +160,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func updateLayout() {
         let targetWidth = calculateAvailableWidth()
         let height: CGFloat = 87
-        let bottomMargin: CGFloat = 4
-        let leftMargin: CGFloat = 4
+        // 上方向に2pxずらす: 6pt
+        let bottomMargin: CGFloat = 6
+        // 左オフセット: 0pt
+        let leftMargin: CGFloat = 0
 
         let newFrame = NSRect(x: leftMargin, y: bottomMargin, width: targetWidth, height: height)
 
         if window.frame != newFrame {
             window.setFrame(newFrame, display: true, animate: true)
             visualEffect.frame = NSRect(x: 0, y: 0, width: targetWidth, height: height)
-            stack.frame = NSRect(x: 16, y: 7, width: targetWidth - 32, height: height - 14)
+            stack.frame = NSRect(x: 14, y: 7, width: targetWidth - 28, height: height - 14)
         }
     }
 

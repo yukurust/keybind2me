@@ -111,20 +111,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             backgroundView = glassView
             applySystemGlassSetting(to: glassView)
         } else {
-            let visualEffect = NSVisualEffectView(frame: NSRect(x: 0, y: 0, width: initialWidth, height: initialHeight))
-            visualEffect.material = .hudWindow
-            visualEffect.blendingMode = .behindWindow
-            visualEffect.state = .active
-            visualEffect.wantsLayer = true
-            visualEffect.layer?.cornerRadius = cornerRadius
-            visualEffect.layer?.cornerCurve = .continuous
-            visualEffect.layer?.masksToBounds = true
-            visualEffect.addSubview(stack)
-
-            backgroundView = visualEffect
+            let clearPlate = NSView(frame: NSRect(x: 0, y: 0, width: initialWidth, height: initialHeight))
+            clearPlate.wantsLayer = true
+            clearPlate.layer?.backgroundColor = NSColor.clear.cgColor
+            clearPlate.layer?.cornerRadius = cornerRadius
+            clearPlate.layer?.cornerCurve = .continuous
+            clearPlate.layer?.masksToBounds = true
+            clearPlate.addSubview(stack)
+            backgroundView = clearPlate
         }
 
-        window.contentView = backgroundView
+        let plate = LiquidGlassPlate(frame: backgroundView.frame)
+        backgroundView.frame = plate.bounds
+        backgroundView.autoresizingMask = [.width, .height]
+        plate.addSubview(backgroundView)
+        window.contentView = plate
         window.orderFrontRegardless()
     }
 
@@ -252,6 +253,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
             stack.frame = NSRect(x: 16, y: 4, width: targetWidth - 32, height: targetHeight - 8)
         }
+        if let plate = window.contentView {
+            stripNonLiquidGlassBlur(in: plate)
+        }
     }
 
     func makeSectionView(title: String, titleColor: NSColor, items: [(String, String)]) -> NSView {
@@ -290,6 +294,36 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         return container
+    }
+}
+
+final class LiquidGlassPlate: NSView {
+    override func layout() {
+        super.layout()
+        stripNonLiquidGlassBlur(in: self)
+    }
+}
+
+// NSGlassEffectView の glassBackground は、NSGlassTintAmount が 0 でも
+// ブラー半径とブラー不透明度を残す。スライダーが動かすのは inputBlurFill* だけなので、
+// 半径とブラー不透明度は Liquid Glass の量に由来しない。
+func stripNonLiquidGlassBlur(in view: NSView) {
+    func walk(_ layer: CALayer) {
+        if let filters = layer.filters as? [NSObject] {
+            for filter in filters where filter.value(forKey: "name") as? String == "glassBackground" {
+                for key in ["inputBlurRadius", "inputBlurOpacity0", "inputBlurOpacity1", "inputBlurOpacity2", "inputBlurOpacity3", "inputBlurOpacity4"] {
+                    guard let value = filter.value(forKey: key) as? NSNumber, value.doubleValue != 0 else { continue }
+                    filter.setValue(0.0, forKey: key)
+                }
+            }
+        }
+        layer.sublayers?.forEach(walk)
+    }
+    if let layer = view.layer {
+        walk(layer)
+    }
+    for subview in view.subviews {
+        stripNonLiquidGlassBlur(in: subview)
     }
 }
 

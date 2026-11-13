@@ -166,9 +166,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // システム設定 > アクセシビリティ > 透明度を下げる
         let reduceTransparency = NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency
 
-        // ベースは常に Dock と同じクリア感の variant 11 を維持
-        if (glassView.value(forKey: "_variant") as? Int) != 11 {
-            glassView.setValue(11, forKey: "_variant")
+        // ベースは常に公式の .clear スタイルを維持（自然な透明感・光沢控えめ）
+        if glassView.style != .clear {
+            glassView.style = .clear
         }
 
         let isDark = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua

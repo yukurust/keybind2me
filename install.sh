@@ -36,7 +36,8 @@ chmod +x "${HOME}/.config/aerospace/hud"
 # 4. Compile CheatSheet (Dock Companion)
 echo "==> Compiling CheatSheet..."
 mkdir -p "${TARGET_DIR}/cheatsheet"
-swiftc -O "${TARGET_DIR}/cheatsheet/cheatsheet.swift" -o "${HOME}/.config/aerospace/cheatsheet"
+clang -O0 -c "${TARGET_DIR}/cheatsheet/dock_glass.c" -o /tmp/saithe-dock_glass.o
+swiftc -O "${TARGET_DIR}/cheatsheet/cheatsheet.swift" /tmp/saithe-dock_glass.o -o "${HOME}/.config/aerospace/cheatsheet"
 
 # 5. Setup WezTerm config
 echo "==> Configuring WezTerm..."

@@ -1,4 +1,5 @@
 import Cocoa
+import SwiftUI
 
 class CheatSheetWindow: NSWindow {
     override var canBecomeKey: Bool { false }
@@ -8,6 +9,7 @@ class CheatSheetWindow: NSWindow {
 class AppDelegate: NSObject, NSApplicationDelegate {
     var window: CheatSheetWindow!
     var backgroundView: NSView!
+    var dockHosting: NSView?
     var stack: NSStackView!
     var updateTimer: Timer?
 
@@ -84,8 +86,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         stack.addArrangedSubview(aeroView)
         stack.addArrangedSubview(wezView)
 
-        if #available(macOS 26.0, *) {
-            // macOS 26+ 純正 Liquid Glass (OSの NSGlassTintAmount 設定に連動)
+        if let material = DockGlassMaterial.make() {
+            // Dock と同じ DesignLibrary.GlassMaterialProvider.Configuration.dock
+            let container = NSView(frame: NSRect(x: 0, y: 0, width: initialWidth, height: initialHeight))
+            let host = ClearHostingView(rootView: DockGlassPlate(material: material, radius: cornerRadius))
+            host.frame = container.bounds
+            host.autoresizingMask = [.width, .height]
+            host.wantsLayer = true
+            host.layer?.backgroundColor = NSColor.clear.cgColor
+            container.wantsLayer = true
+            container.layer?.backgroundColor = NSColor.clear.cgColor
+            container.addSubview(host)
+            container.addSubview(stack)
+            dockHosting = host
+            backgroundView = container
+        } else if #available(macOS 26.0, *) {
             let glassView = NSGlassEffectView(frame: NSRect(x: 0, y: 0, width: initialWidth, height: initialHeight))
             glassView.cornerRadius = cornerRadius
 
@@ -225,7 +240,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             backgroundView.frame = NSRect(x: 0, y: 0, width: targetWidth, height: targetHeight)
             let cornerRadius: CGFloat = 28
 
-            if #available(macOS 26.0, *), let glassView = backgroundView as? NSGlassEffectView {
+            if let host = dockHosting {
+                host.frame = NSRect(x: 0, y: 0, width: targetWidth, height: targetHeight)
+            } else if #available(macOS 26.0, *), let glassView = backgroundView as? NSGlassEffectView {
                 glassView.cornerRadius = cornerRadius
                 glassView.contentView?.frame = NSRect(x: 0, y: 0, width: targetWidth, height: targetHeight)
             } else {
@@ -275,6 +292,101 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return container
     }
 }
+
+struct DockGlassPlate: View {
+    var material: Material
+    var radius: CGFloat
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: radius, style: .continuous)
+            .fill(material)
+    }
+}
+
+final class ClearHostingView<Content: View>: NSHostingView<Content> {
+    override var isOpaque: Bool { false }
+}
+
+enum DockGlassMaterial {
+    // macOS 27.0 (26A428) の SwiftUI にある Material._GlassVariant.dock。
+    // この getter が DesignLibrary.GlassMaterialProvider.Configuration.dock を組む。
+    private static let dockGetterOffset = 0x0137F4E8
+    private static let glassFunctionOffset = 0x0137EFC4
+
+    static func make() -> Material? {
+        guard let base = swiftUIBase() else { return nil }
+        guard let sites = thunkSites(base: base) else { return nil }
+        let glass = base.advanced(by: glassFunctionOffset)
+        guard glass.load(as: UInt32.self) == 0xD503237F else { return nil }
+
+        let variant = UnsafeMutableRawPointer.allocate(byteCount: 256, alignment: 16)
+        defer { variant.deallocate() }
+        variant.initializeMemory(as: UInt8.self, repeating: 0, count: 256)
+        dock_call_tail(sites.tail, sites.global, sites.global.advanced(by: 8), sites.helper, variant)
+
+        var storage = (UInt64(0), UInt64(0), UInt64(0))
+        withUnsafeMutablePointer(to: &storage) { pointer in
+            dock_call_glass(glass, variant, UnsafeMutableRawPointer(pointer))
+        }
+        return withUnsafeBytes(of: &storage) {
+            $0.baseAddress!.assumingMemoryBound(to: Material.self).pointee
+        }
+    }
+
+    private struct ThunkSites {
+        let tail: UnsafeRawPointer
+        let global: UnsafeRawPointer
+        let helper: UnsafeRawPointer
+    }
+
+    private static func swiftUIBase() -> UnsafeRawPointer? {
+        _ = dlopen("/System/Library/Frameworks/SwiftUI.framework/SwiftUI", RTLD_NOW)
+        _ = dlopen("/System/Library/PrivateFrameworks/DesignLibrary.framework/DesignLibrary", RTLD_NOW)
+        let count = _dyld_image_count()
+        for index in 0..<count {
+            let name = String(cString: _dyld_get_image_name(index))
+            if name.contains("SwiftUI.framework/Versions/A/SwiftUI") {
+                return UnsafeRawPointer(_dyld_get_image_header(index))
+            }
+        }
+        return nil
+    }
+
+    private static func thunkSites(base: UnsafeRawPointer) -> ThunkSites? {
+        let getter = base.advanced(by: dockGetterOffset)
+        let paciza = getter.advanced(by: 24).load(as: UInt32.self)
+        let move = getter.advanced(by: 28).load(as: UInt32.self)
+        guard paciza == 0xDAC123F0, move == 0xAA1003E2 else { return nil }
+        let branch = getter.advanced(by: 32).load(as: UInt32.self)
+        guard branch & 0xFC000000 == 0x14000000 else { return nil }
+        var imm = Int(branch & 0x03FFFFFF)
+        if imm & (1 << 25) != 0 { imm -= 1 << 26 }
+        let tail = getter.advanced(by: 32 + imm * 4)
+        guard let global = adrpTarget(base: base, instruction: dockGetterOffset),
+              let helper = adrpTarget(base: base, instruction: dockGetterOffset + 16) else { return nil }
+        return ThunkSites(tail: tail, global: global, helper: helper)
+    }
+
+    private static func adrpTarget(base: UnsafeRawPointer, instruction: Int) -> UnsafeRawPointer? {
+        let word = base.advanced(by: instruction).load(as: UInt32.self)
+        guard word & 0x9F000000 == 0x90000000 else { return nil }
+        let pc = UInt(bitPattern: base) + UInt(instruction)
+        let immlo = (word >> 29) & 3
+        let immhi = (word >> 5) & 0x7FFFF
+        var imm = (immhi << 2) | immlo
+        if imm & (1 << 20) != 0 { imm = imm &- (1 << 21) }
+        let page = (pc & ~0xFFF) &+ UInt(bitPattern: Int(imm) << 12)
+        let add = base.advanced(by: instruction + 4).load(as: UInt32.self)
+        guard add & 0xFF800000 == 0x91000000 else { return nil }
+        let addimm = UInt((add >> 10) & 0xFFF)
+        return UnsafeRawPointer(bitPattern: page &+ addimm)
+    }
+}
+
+@_silgen_name("dock_call_tail")
+func dock_call_tail(_ tail: UnsafeRawPointer, _ global: UnsafeRawPointer, _ globalPlus8: UnsafeRawPointer, _ helper: UnsafeRawPointer, _ ret: UnsafeMutableRawPointer)
+@_silgen_name("dock_call_glass")
+func dock_call_glass(_ glass: UnsafeRawPointer, _ variant: UnsafeRawPointer, _ ret: UnsafeMutableRawPointer)
 
 let app = NSApplication.shared
 app.setActivationPolicy(.accessory)

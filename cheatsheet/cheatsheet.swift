@@ -86,23 +86,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         stack.addArrangedSubview(aeroView)
         stack.addArrangedSubview(wezView)
 
-        if let glass = DockGlass.make() {
-            // Dock のガラスは material の塗りだけでは縁が出ない。glassEffect が縁を描く。
+        if let material = DockGlassMaterial.make() {
+            // Dock と同じ DesignLibrary.GlassMaterialProvider.Configuration.dock
             let container = NSView(frame: NSRect(x: 0, y: 0, width: initialWidth, height: initialHeight))
-            let host = ClearHostingView(rootView: DockGlassPlate(glass: glass, radius: cornerRadius))
-            host.frame = container.bounds
-            host.autoresizingMask = [.width, .height]
-            host.wantsLayer = true
-            host.layer?.backgroundColor = NSColor.clear.cgColor
-            container.wantsLayer = true
-            container.layer?.backgroundColor = NSColor.clear.cgColor
-            container.addSubview(host)
-            container.addSubview(stack)
-            dockHosting = host
-            backgroundView = container
-        } else if let material = DockGlassMaterial.make() {
-            let container = NSView(frame: NSRect(x: 0, y: 0, width: initialWidth, height: initialHeight))
-            let host = ClearHostingView(rootView: DockMaterialPlate(material: material, radius: cornerRadius))
+            let host = ClearHostingView(rootView: DockGlassPlate(material: material, radius: cornerRadius))
             host.frame = container.bounds
             host.autoresizingMask = [.width, .height]
             host.wantsLayer = true
@@ -306,58 +293,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 }
 
-struct DockMaterialPlate: View {
+struct DockGlassPlate: View {
     var material: Material
     var radius: CGFloat
 
     var body: some View {
         RoundedRectangle(cornerRadius: radius, style: .continuous)
             .fill(material)
-    }
-}
-
-struct DockGlassPlate: View {
-    var glass: Glass
-    var radius: CGFloat
-
-    var body: some View {
-        let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
-        shape
-            .fill(Color.clear)
-            .glassEffect(glass, in: shape)
-    }
-}
-
-enum DockGlass {
-    // macOS 27.0 (26A428) の SwiftUI._Glass.dock。
-    // 公開の Glass と同じ 40 バイトで、glassEffect が Dock の縁を描く。
-    private static let dockGetterOffset = 0x00A85AFC
-
-    static func make() -> Glass? {
-        guard let base = swiftUICoreBase() else { return nil }
-        let getter = base.advanced(by: dockGetterOffset)
-        guard getter.load(as: UInt32.self) == 0xD2800309,
-              getter.advanced(by: 4).load(as: UInt32.self) == 0xF2F00009 else { return nil }
-
-        var storage = (UInt64(0), UInt64(0), UInt64(0), UInt64(0), UInt64(0))
-        withUnsafeMutablePointer(to: &storage) { pointer in
-            dock_call_glass(getter, getter, UnsafeMutableRawPointer(pointer))
-        }
-        return withUnsafeBytes(of: &storage) {
-            $0.baseAddress!.assumingMemoryBound(to: Glass.self).pointee
-        }
-    }
-
-    private static func swiftUICoreBase() -> UnsafeRawPointer? {
-        _ = dlopen("/System/Library/Frameworks/SwiftUICore.framework/SwiftUICore", RTLD_NOW)
-        let count = _dyld_image_count()
-        for index in 0..<count {
-            let name = String(cString: _dyld_get_image_name(index))
-            if name.contains("SwiftUICore.framework/Versions/A/SwiftUICore") {
-                return UnsafeRawPointer(_dyld_get_image_header(index))
-            }
-        }
-        return nil
     }
 }
 

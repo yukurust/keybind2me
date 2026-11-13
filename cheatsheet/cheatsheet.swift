@@ -223,9 +223,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let estimatedDockWidth = max(totalItemCount - 1, 0) * pitch
             + sideInset * 2
             + CGFloat(dividerCount) * divider
-        // 見積もりはガラスの外周ちょうどになる。シートは Dock より手前に描くので、縁の分だけ引く。
-        let rim: CGFloat = 8
-        return max((screen.frame.width - estimatedDockWidth) / 2 - rim, 260)
+        return max((screen.frame.width - estimatedDockWidth) / 2, 260)
     }
 
     @available(macOS 26.0, *)

@@ -163,22 +163,25 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             tintAmount = 0.0
         }
 
-        // クリア側 (0.0付近) は Dockに最も近い variant 11、色付き側 (> 0.15) は .regular にして強度に応じて tintColor を補間
-        if tintAmount <= 0.15 {
-            if (glassView.value(forKey: "_variant") as? Int) != 11 {
-                glassView.setValue(11, forKey: "_variant")
-            }
-            glassView.tintColor = nil
+        // システム設定 > アクセシビリティ > 透明度を下げる
+        let reduceTransparency = NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency
+
+        // ベースは常に Dock と同じクリア感の variant 11 を維持
+        if (glassView.value(forKey: "_variant") as? Int) != 11 {
+            glassView.setValue(11, forKey: "_variant")
+        }
+
+        let isDark = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+        let baseColor = isDark ? NSColor(white: 0.12, alpha: 1.0) : NSColor(white: 0.94, alpha: 1.0)
+
+        if reduceTransparency {
+            // 透明度を下げるがONのときはしっかり不透明に
+            glassView.tintColor = baseColor.withAlphaComponent(0.92)
         } else {
-            if glassView.style != .regular {
-                glassView.style = .regular
-            }
-            // ダーク/ライトモードに合わせた微細なティント強度調整
-            let isDark = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-            let baseColor = isDark ? NSColor(white: 0.12, alpha: 1.0) : NSColor(white: 0.94, alpha: 1.0)
-            // 0.15〜1.0 を 0.0〜0.55 のティント濃度にマッピング
-            let alpha = CGFloat(min(max((tintAmount - 0.15) / 0.85 * 0.55, 0.0), 0.55))
-            glassView.tintColor = alpha > 0.02 ? baseColor.withAlphaComponent(alpha) : nil
+            // OSの Liquid Glass スライダー (0.0〜1.0) に比例して透過度合いを連続的に変化させる
+            let clamped = min(max(tintAmount, 0.0), 1.0)
+            let alpha = CGFloat(clamped * 0.65)
+            glassView.tintColor = alpha > 0.01 ? baseColor.withAlphaComponent(alpha) : nil
         }
     }
 

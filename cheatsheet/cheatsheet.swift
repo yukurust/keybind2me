@@ -7,7 +7,7 @@ class CheatSheetWindow: NSWindow {
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     var window: CheatSheetWindow!
-    var visualEffect: NSVisualEffectView!
+    var backgroundView: NSView!
     var stack: NSStackView!
     var updateTimer: Timer?
 
@@ -38,6 +38,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let initialWidth: CGFloat = 380
         let initialHeight: CGFloat = 80
         let initialBottomMargin: CGFloat = 6
+        let cornerRadius: CGFloat = 28
 
         window = CheatSheetWindow(
             contentRect: NSRect(x: 0, y: initialBottomMargin, width: initialWidth, height: initialHeight),
@@ -48,23 +49,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         window.isOpaque = false
         window.backgroundColor = .clear
+        window.hasShadow = false
         window.level = .screenSaver
         window.ignoresMouseEvents = true
         window.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
 
-        // Dockと完全に同一のプライベートマテリアル (Dockマテリアル rawValue: 20)
-        visualEffect = NSVisualEffectView(frame: NSRect(x: 0, y: 0, width: initialWidth, height: initialHeight))
-        // rawValue 20 = macOS内部の kCGSWindowBackdropMaterialDock (Dock専用ブラー)
-        visualEffect.material = NSVisualEffectView.Material(rawValue: 20) ?? .fullScreenUI
-        visualEffect.blendingMode = .behindWindow
-        visualEffect.state = .active
-        visualEffect.wantsLayer = true
-        let cornerRadius: CGFloat = 28
-        visualEffect.layer?.cornerRadius = cornerRadius
-        visualEffect.layer?.cornerCurve = .continuous
-        visualEffect.layer?.masksToBounds = true
-
-        stack = NSStackView(frame: NSRect(x: 14, y: 4, width: initialWidth - 28, height: initialHeight - 8))
+        stack = NSStackView(frame: NSRect(x: 16, y: 4, width: initialWidth - 32, height: initialHeight - 8))
         stack.orientation = .horizontal
         stack.distribution = .fillEqually
         stack.spacing = 16
@@ -93,8 +83,33 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         stack.addArrangedSubview(aeroView)
         stack.addArrangedSubview(wezView)
-        visualEffect.addSubview(stack)
-        window.contentView = visualEffect
+
+        if #available(macOS 26.0, *) {
+            // macOS 26+ 純正 Liquid Glass (Dockと同一の光学屈折・光沢マテリアル)
+            let glassView = NSGlassEffectView(frame: NSRect(x: 0, y: 0, width: initialWidth, height: initialHeight))
+            glassView.style = .regular
+            glassView.cornerRadius = cornerRadius
+
+            let contentContainer = NSView(frame: NSRect(x: 0, y: 0, width: initialWidth, height: initialHeight))
+            contentContainer.addSubview(stack)
+            glassView.contentView = contentContainer
+
+            backgroundView = glassView
+        } else {
+            let visualEffect = NSVisualEffectView(frame: NSRect(x: 0, y: 0, width: initialWidth, height: initialHeight))
+            visualEffect.material = .hudWindow
+            visualEffect.blendingMode = .behindWindow
+            visualEffect.state = .active
+            visualEffect.wantsLayer = true
+            visualEffect.layer?.cornerRadius = cornerRadius
+            visualEffect.layer?.cornerCurve = .continuous
+            visualEffect.layer?.masksToBounds = true
+            visualEffect.addSubview(stack)
+
+            backgroundView = visualEffect
+        }
+
+        window.contentView = backgroundView
         window.orderFrontRegardless()
     }
 
@@ -169,11 +184,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         if window.frame != newFrame {
             window.setFrame(newFrame, display: true, animate: true)
-            visualEffect.frame = NSRect(x: 0, y: 0, width: targetWidth, height: targetHeight)
+            backgroundView.frame = NSRect(x: 0, y: 0, width: targetWidth, height: targetHeight)
             let cornerRadius: CGFloat = 28
-            visualEffect.layer?.cornerRadius = cornerRadius
-            visualEffect.layer?.cornerCurve = .continuous
-            stack.frame = NSRect(x: 14, y: 4, width: targetWidth - 28, height: targetHeight - 8)
+
+            if #available(macOS 26.0, *), let glassView = backgroundView as? NSGlassEffectView {
+                glassView.cornerRadius = cornerRadius
+                glassView.contentView?.frame = NSRect(x: 0, y: 0, width: targetWidth, height: targetHeight)
+            } else {
+                backgroundView.layer?.cornerRadius = cornerRadius
+                backgroundView.layer?.cornerCurve = .continuous
+            }
+
+            stack.frame = NSRect(x: 16, y: 4, width: targetWidth - 32, height: targetHeight - 8)
         }
     }
 

@@ -163,10 +163,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             tintAmount = 0.0
         }
 
-        // クリア側 (0.0付近) は .clear、色付き側 (> 0.15) は .regular にして強度に応じて tintColor を補間
+        // クリア側 (0.0付近) は Dockに最も近い variant 11、色付き側 (> 0.15) は .regular にして強度に応じて tintColor を補間
         if tintAmount <= 0.15 {
-            if glassView.style != .clear {
-                glassView.style = .clear
+            if (glassView.value(forKey: "_variant") as? Int) != 11 {
+                glassView.setValue(11, forKey: "_variant")
             }
             glassView.tintColor = nil
         } else {

@@ -180,14 +180,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
+        let finderCount = countedBundles.contains("com.apple.finder") ? 0 : 1
+
         let runningApps = NSWorkspace.shared.runningApplications.filter { $0.activationPolicy == .regular }
         var nonPersistentRunningCount = 0
         for app in runningApps {
             let bundle = (app.bundleIdentifier ?? "").lowercased()
-            if bundle != "com.apple.finder" && !countedBundles.contains(bundle) {
-                countedBundles.insert(bundle)
-                nonPersistentRunningCount += 1
-            }
+            if bundle.isEmpty || bundle == "com.apple.finder" || countedBundles.contains(bundle) { continue }
+            countedBundles.insert(bundle)
+            nonPersistentRunningCount += 1
         }
 
         let showRecents = (defaults?.object(forKey: "show-recents") as? Bool) ?? true
@@ -204,12 +205,23 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         let othersCount = (defaults?.array(forKey: "persistent-others")?.count ?? 0) + 1
-        let totalItemCount = CGFloat(persistentApps.count + nonPersistentRunningCount + recentCount + othersCount)
-        let itemSpacing: CGFloat = 10
-        let estimatedDockWidth = (totalItemCount * tilesize)
-            + (max(totalItemCount - 1, 0) * itemSpacing)
-            + 18
-            + 28
+        let pinnedCount = persistentApps.count + finderCount
+        let openCount = nonPersistentRunningCount + recentCount
+        var sectionCount = 0
+        if pinnedCount > 0 { sectionCount += 1 }
+        if openCount > 0 { sectionCount += 1 }
+        if othersCount > 0 { sectionCount += 1 }
+        let dividerCount = max(sectionCount - 1, 0)
+
+        // tilesize 73 の実測。間隔は約 80、左右の端ガラスは約 52、区切りは約 28。
+        // 区切りを足さないと右端が Dock のアイコンに被る。
+        let totalItemCount = CGFloat(pinnedCount + openCount + othersCount)
+        let pitch = tilesize * 1.096
+        let sideInset = tilesize * 0.72
+        let divider = tilesize * 0.385
+        let estimatedDockWidth = max(totalItemCount - 1, 0) * pitch
+            + sideInset * 2
+            + CGFloat(dividerCount) * divider
         return max((screen.frame.width - estimatedDockWidth) / 2, 260)
     }
 

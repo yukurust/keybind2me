@@ -214,14 +214,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if othersCount > 0 { sectionCount += 1 }
         let dividerCount = max(sectionCount - 1, 0)
 
-        // tilesize 73 の実測。間隔は約 80、左右の端ガラスは約 52、区切りは約 28。
-        // 区切りを足さないと右端が Dock のアイコンに被る。
+        // 間隔・端・区切りはタイルほど縮まない。比例だけだと小さい Dock に右端が被る。
+        // tilesize 40 と 70 で、ガラス左端が 0px になるように合わせた。
         let totalItemCount = CGFloat(pinnedCount + openCount + othersCount)
-        let pitch = tilesize * 1.096
-        let sideInset = tilesize * 0.72
-        let divider = tilesize * 0.385
-        let estimatedDockWidth = max(totalItemCount - 1, 0) * pitch
-            + sideInset * 2
+        let gap = max(tilesize * 0.1 - 2, 0)
+        let cap = max(tilesize / 3 - 28.0 / 3, 0)
+        let divider = max(tilesize * (37.0 / 30) - 91.0 / 3, 0)
+        let estimatedDockWidth = max(totalItemCount - 1, 0) * (tilesize + gap)
+            + (tilesize / 2 + cap) * 2
             + CGFloat(dividerCount) * divider
         return max((screen.frame.width - estimatedDockWidth) / 2, 260)
     }

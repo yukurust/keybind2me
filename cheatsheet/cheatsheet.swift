@@ -85,9 +85,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         stack.addArrangedSubview(wezView)
 
         if #available(macOS 26.0, *) {
-            // macOS 26+ 純正 Liquid Glass (Dockと同一の光学屈折・光沢マテリアル)
+            // macOS 26+ 純正 Liquid Glass (OSの NSGlassTintAmount 設定に連動)
             let glassView = NSGlassEffectView(frame: NSRect(x: 0, y: 0, width: initialWidth, height: initialHeight))
-            glassView.style = .regular
             glassView.cornerRadius = cornerRadius
 
             let contentContainer = NSView(frame: NSRect(x: 0, y: 0, width: initialWidth, height: initialHeight))
@@ -95,6 +94,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             glassView.contentView = contentContainer
 
             backgroundView = glassView
+            applySystemGlassSetting(to: glassView)
         } else {
             let visualEffect = NSVisualEffectView(frame: NSRect(x: 0, y: 0, width: initialWidth, height: initialHeight))
             visualEffect.material = .hudWindow
@@ -151,8 +151,43 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return nil
     }
 
+    @available(macOS 26.0, *)
+    func applySystemGlassSetting(to glassView: NSGlassEffectView) {
+        // システム設定 > 外観 > Liquid Glass の強度 (NSGlassTintAmount: 0.0〜1.0) をキャッシュなしで最新取得
+        CFPreferencesAppSynchronize(kCFPreferencesAnyApplication)
+        let rawVal = CFPreferencesCopyAppValue("NSGlassTintAmount" as CFString, kCFPreferencesAnyApplication)
+        let tintAmount: Double
+        if let num = rawVal as? NSNumber {
+            tintAmount = num.doubleValue
+        } else {
+            tintAmount = 0.0
+        }
+
+        // クリア側 (0.0付近) は .clear、色付き側 (> 0.15) は .regular にして強度に応じて tintColor を補間
+        if tintAmount <= 0.15 {
+            if glassView.style != .clear {
+                glassView.style = .clear
+            }
+            glassView.tintColor = nil
+        } else {
+            if glassView.style != .regular {
+                glassView.style = .regular
+            }
+            // ダーク/ライトモードに合わせた微細なティント強度調整
+            let isDark = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+            let baseColor = isDark ? NSColor(white: 0.12, alpha: 1.0) : NSColor(white: 0.94, alpha: 1.0)
+            // 0.15〜1.0 を 0.0〜0.55 のティント濃度にマッピング
+            let alpha = CGFloat(min(max((tintAmount - 0.15) / 0.85 * 0.55, 0.0), 0.55))
+            glassView.tintColor = alpha > 0.02 ? baseColor.withAlphaComponent(alpha) : nil
+        }
+    }
+
     func updateLayout() {
         guard let screen = NSScreen.main else { return }
+
+        if #available(macOS 26.0, *), let glassView = backgroundView as? NSGlassEffectView {
+            applySystemGlassSetting(to: glassView)
+        }
 
         // ウィンドウやアプリの作業領域の下端（Dockの上限ライン = visibleFrame.minY）
         // 上部に1pxの隙間をあけるため - 1.0

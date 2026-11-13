@@ -168,6 +168,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     // Dock は中央置き。画面幅から推定幅を引いて 2 で割った値が左端。余白は足さない。
     func estimatedDockLeft(on screen: NSScreen) -> CGFloat {
+        CFPreferencesAppSynchronize("com.apple.dock" as CFString)
         let defaults = UserDefaults(suiteName: "com.apple.dock")
         let storedTile = defaults?.integer(forKey: "tilesize") ?? 0
         let tilesize = CGFloat(storedTile > 0 ? storedTile : 67)
@@ -222,7 +223,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let estimatedDockWidth = max(totalItemCount - 1, 0) * pitch
             + sideInset * 2
             + CGFloat(dividerCount) * divider
-        return max((screen.frame.width - estimatedDockWidth) / 2, 260)
+        // 見積もりはガラスの外周ちょうどになる。シートは Dock より手前に描くので、縁の分だけ引く。
+        let rim: CGFloat = 8
+        return max((screen.frame.width - estimatedDockWidth) / 2 - rim, 260)
     }
 
     @available(macOS 26.0, *)

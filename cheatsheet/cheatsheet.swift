@@ -166,6 +166,53 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return nil
     }
 
+    // Dock は中央置き。画面幅から推定幅を引いて 2 で割った値が左端。余白は足さない。
+    func estimatedDockLeft(on screen: NSScreen) -> CGFloat {
+        let defaults = UserDefaults(suiteName: "com.apple.dock")
+        let storedTile = defaults?.integer(forKey: "tilesize") ?? 0
+        let tilesize = CGFloat(storedTile > 0 ? storedTile : 67)
+
+        let persistentApps = defaults?.array(forKey: "persistent-apps") as? [[String: Any]] ?? []
+        var countedBundles = Set<String>()
+        for app in persistentApps {
+            if let tile = app["tile-data"] as? [String: Any], let bundle = tile["bundle-identifier"] as? String {
+                countedBundles.insert(bundle.lowercased())
+            }
+        }
+
+        let runningApps = NSWorkspace.shared.runningApplications.filter { $0.activationPolicy == .regular }
+        var nonPersistentRunningCount = 0
+        for app in runningApps {
+            let bundle = (app.bundleIdentifier ?? "").lowercased()
+            if bundle != "com.apple.finder" && !countedBundles.contains(bundle) {
+                countedBundles.insert(bundle)
+                nonPersistentRunningCount += 1
+            }
+        }
+
+        let showRecents = (defaults?.object(forKey: "show-recents") as? Bool) ?? true
+        var recentCount = 0
+        if showRecents, let recentApps = defaults?.array(forKey: "recent-apps") as? [[String: Any]] {
+            for app in recentApps {
+                let tile = app["tile-data"] as? [String: Any]
+                let bundle = (tile?["bundle-identifier"] as? String)?.lowercased() ?? ""
+                if !bundle.isEmpty && !countedBundles.contains(bundle) {
+                    countedBundles.insert(bundle)
+                    recentCount += 1
+                }
+            }
+        }
+
+        let othersCount = (defaults?.array(forKey: "persistent-others")?.count ?? 0) + 1
+        let totalItemCount = CGFloat(persistentApps.count + nonPersistentRunningCount + recentCount + othersCount)
+        let itemSpacing: CGFloat = 10
+        let estimatedDockWidth = (totalItemCount * tilesize)
+            + (max(totalItemCount - 1, 0) * itemSpacing)
+            + 18
+            + 28
+        return max((screen.frame.width - estimatedDockWidth) / 2, 260)
+    }
+
     @available(macOS 26.0, *)
     func applySystemGlassSetting(to glassView: NSGlassEffectView) {
         // システム設定 > 外観 > Liquid Glass の強度 (NSGlassTintAmount: 0.0〜1.0) をキャッシュなしで最新取得
@@ -227,7 +274,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 bottomMargin = maxAllowedTop - targetHeight
             }
         } else {
-            targetWidth = 380
+            targetWidth = estimatedDockLeft(on: screen)
             targetHeight = max(maxAllowedTop - 5, 60)
             bottomMargin = 5
         }

@@ -28,6 +28,7 @@ alt-d = 'workspace Development'
 alt-b = 'workspace Browser'
 alt-n = 'workspace Note'
 alt-c = 'workspace Chat'
+alt-a = 'workspace AI'
 alt-1 = 'workspace 1'
 
 # ウィンドウをワークスペースへ移動 (Option + Shift + キー)
@@ -35,6 +36,7 @@ alt-shift-d = 'move-node-to-workspace Development'
 alt-shift-b = 'move-node-to-workspace Browser'
 alt-shift-n = 'move-node-to-workspace Note'
 alt-shift-c = 'move-node-to-workspace Chat'
+alt-shift-a = 'move-node-to-workspace AI'
 alt-shift-1 = 'move-node-to-workspace 1'
 
 # ウィンドウフォーカス移動 (Vimキーバインド)
@@ -130,15 +132,24 @@ run = 'move-node-to-workspace Chat'
 if.app-id = 'jp.naver.line.mac'              # LINE
 run = 'move-node-to-workspace Chat'
 
+# --- 5. AI (AI Chat) ---
 [[on-window-detected]]
 if.app-id = 'com.openai.codex'               # ChatGPT
-run = 'move-node-to-workspace Chat'
+run = 'move-node-to-workspace AI'
+
+[[on-window-detected]]
+if.app-id = 'com.meta.endo'                  # Muse
+run = 'move-node-to-workspace AI'
 
 [[on-window-detected]]
 if.app-id = 'com.anysphere.sand'             # Grok Bot
-run = 'move-node-to-workspace Chat'
+run = 'move-node-to-workspace AI'
 
-# --- 5. 未振り分け・その他アプリ -> ワークスペース '1' ---
+[[on-window-detected]]
+if.app-id = 'com.google.GeminiMacOS'         # Gemini
+run = 'move-node-to-workspace AI'
+
+# --- 6. 未振り分け・その他アプリ -> ワークスペース '1' ---
 [[on-window-detected]]
 if.app-id = '.*'
 run = 'move-node-to-workspace 1'

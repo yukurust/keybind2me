@@ -65,9 +65,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             title: "⌥ AeroSpace",
             titleColor: NSColor(red: 0.35, green: 0.78, blue: 0.98, alpha: 1.0),
             items: [
-                ("D/B/N/C/1", "WS移動"),
-                ("⇧+D/B..", "該当WSへ送る"),
                 ("H/J/K/L", "フォーカス移動"),
+                ("⇧+H/J/K/L", "窓位置入れ替え"),
+                ("- / =", "サイズ変更"),
                 ("F / M", "Float / Full")
             ]
         )

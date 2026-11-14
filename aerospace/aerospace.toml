@@ -49,9 +49,11 @@ alt-shift-j = 'move down'
 alt-shift-k = 'move up'
 alt-shift-l = 'move right'
 
-# フローティング切り替え・フルスクリーン
+# フローティング切り替え・フルスクリーン・サイズ変更
 alt-f = 'layout floating tiling'
 alt-m = 'fullscreen'
+alt-minus = 'resize smart -50'
+alt-equal = 'resize smart +50'
 
 # ------------------------------------------------------------------------------
 # アプリ自動振り分け (on-window-detected)

@@ -4,10 +4,18 @@
 
 start-at-login = true
 
-# ワークスペース切り替え時のフック（画面左上HUD表示）
+# 起動時に JankyBorders を立ち上げて注目ウィンドウに枠線を表示
+after-startup-command = [
+  'exec-and-forget /bin/bash -c "PATH=/opt/homebrew/bin:/usr/local/bin:\$PATH borders active_color=0xff59c7fa inactive_color=0x00000000 width=4.0 hidpi=on"'
+]
+
+# フォーカス変更時にマウスカーソルをウィンドウ中央へ追従
+on-focus-changed = ['move-mouse window-lazy-center']
+
+# ワークスペース切り替え時のフック（ノッチHUD表示）
 exec-on-workspace-change = [
   '/bin/bash', '-c',
-  '/Users/yshi112358/.config/aerospace/hud "$AEROSPACE_FOCUSED_WORKSPACE"'
+  '$HOME/.config/aerospace/hud "$AEROSPACE_FOCUSED_WORKSPACE"'
 ]
 
 # ------------------------------------------------------------------------------

@@ -8,7 +8,7 @@
 ## ✨ Features
 
 - **AeroSpace (Tiling Window Manager)**
-  - 用途別ワークスペース（`Development`, `Browser`, `Note`, `Chat`, `1`）
+  - 用途別ワークスペース（`Development`, `Browser`, `Note`, `Chat`, `AI`, `1`）
   - キーボードショートカットで瞬時にアプリ・画面切り替え
   - アプリ自動ルーティング（Cursor, WezTerm, Linear, Obsidian, Slack, LINE など）
   - Finder のオーバーレイ（フローティング）表示
@@ -79,9 +79,10 @@ killall cheatsheet
 | `Option + D` | **Development** へ移動 (Cursor, Antigravity, WezTerm, Linear, Orca) |
 | `Option + B` | **Browser** へ移動 (Zen, Spotify, Google Chrome, Safari) |
 | `Option + N` | **Note** へ移動 (Obsidian, Apple Notes) |
-| `Option + C` | **Chat** へ移動 (Discord, LINE, Slack, ChatGPT, Grok Bot) |
+| `Option + C` | **Chat** へ移動 (Discord, LINE, Slack) |
+| `Option + A` | **AI** へ移動 (ChatGPT, Muse, Grok Bot, Gemini) |
 | `Option + 1` | **1 (その他)** へ移動 (Bambu Studio, NordPass, NordVPN など未分類アプリ) |
-| `Option + Shift + [D/B/N/C/1]` | フォーカス中のウィンドウを指定ワークスペースへ送る |
+| `Option + Shift + [D/B/N/C/A/1]` | フォーカス中のウィンドウを指定ワークスペースへ送る |
 | `Option + H / J / K / L` | フォーカスを 左 / 下 / 上 / 右 へ移動 (Vim キーバインド) |
 | `Option + Shift + H / J / K / L` | ウィンドウ位置を 左 / 下 / 上 / 右 へ入れ替え |
 | `Option + - / ;` | フォーカス中のウィンドウを 縮小 / 拡大 |

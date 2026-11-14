@@ -66,8 +66,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             titleColor: NSColor(red: 0.35, green: 0.78, blue: 0.98, alpha: 1.0),
             items: [
                 ("H/J/K/L", "フォーカス移動"),
-                ("⇧+H/J/K/L", "窓位置入れ替え"),
-                ("- / ; / ⇧-", "サイズ/等倍"),
+                ("Shift+H/J/K/L", "窓位置入れ替え"),
+                ("- / ; / Shift+-", "サイズ/等倍"),
                 ("F / M", "Float / Full")
             ]
         )

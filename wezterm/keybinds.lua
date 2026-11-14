@@ -1,13 +1,37 @@
 local wezterm = require("wezterm")
 local act = wezterm.action
 
--- Show which key table is active in the status area
+-- Show leader (Ctrl+Q) / key table state in the tab bar right status
 wezterm.on("update-right-status", function(window, pane)
-  local name = window:active_key_table()
-  if name then
-    name = "TABLE: " .. name
+  local leader = window:leader_is_active()
+  local table_name = window:active_key_table()
+  local is_active = leader or (table_name ~= nil)
+
+  -- タブが1つだけの時も、コマンドモード/キーテーブル中は一時的にタブバーを表示する
+  local overrides = window:get_config_overrides() or {}
+  local want_override = is_active and false or nil
+  if overrides.hide_tab_bar_if_only_one_tab ~= want_override then
+    overrides.hide_tab_bar_if_only_one_tab = want_override
+    window:set_config_overrides(overrides)
   end
-  window:set_right_status(name or "")
+
+  if leader then
+    window:set_right_status(wezterm.format({
+      { Background = { Color = "#59c7fa" } },
+      { Foreground = { Color = "#111111" } },
+      { Attribute = { Intensity = "Bold" } },
+      { Text = "  ⌃Q COMMAND  " },
+    }))
+  elseif table_name then
+    window:set_right_status(wezterm.format({
+      { Background = { Color = "#ae8b2d" } },
+      { Foreground = { Color = "#ffffff" } },
+      { Attribute = { Intensity = "Bold" } },
+      { Text = "  MODE: " .. table_name .. "  " },
+    }))
+  else
+    window:set_right_status("")
+  end
 end)
 
 return {

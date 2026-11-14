@@ -67,7 +67,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             items: [
                 ("H/J/K/L", "フォーカス移動"),
                 ("⇧+H/J/K/L", "窓位置入れ替え"),
-                ("- / =", "サイズ変更"),
+                ("- / ; / ⇧-", "サイズ/等倍"),
                 ("F / M", "Float / Full")
             ]
         )

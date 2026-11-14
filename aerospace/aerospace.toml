@@ -53,7 +53,8 @@ alt-shift-l = 'move right'
 alt-f = 'layout floating tiling'
 alt-m = 'fullscreen'
 alt-minus = 'resize smart -50'
-alt-equal = 'resize smart +50'
+alt-semicolon = 'resize smart +50'
+alt-shift-minus = 'balance-sizes'
 
 # ------------------------------------------------------------------------------
 # アプリ自動振り分け (on-window-detected)

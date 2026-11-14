@@ -76,10 +76,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             title: "⌃Q WezTerm",
             titleColor: NSColor(red: 0.60, green: 0.90, blue: 0.45, alpha: 1.0),
             items: [
-                ("v / s", "縦/横分割"),
+                ("d / r", "縦/横分割"),
                 ("h/j/k/l", "ペイン移動"),
-                ("z", "ペイン最大化"),
-                ("w / c", "WS選択 / 新規タブ")
+                ("s → hjkl", "サイズ変更"),
+                ("z / x", "最大化/閉じる")
             ]
         )
 

@@ -93,7 +93,7 @@ vimium/apply.sh
 obsidian/apply.sh
 ```
 
-基準は Vim / Neovim の初期キーです。半ページは `Ctrl-d` / `Ctrl-u`、タブは `gt` / `gT`、履歴は `Ctrl-o` / `Ctrl-i` です。`j` や `x` は Obsidian ではカーソル移動と文字削除のままにしてあります。
+基準は Vim / Neovim の初期キーです。半ページは `Ctrl-d` / `Ctrl-u`、タブ移動は `gt` / `gT`、タブの開閉は `Space t` / `Space q` / `Space Q`、履歴は `Ctrl-o` / `Ctrl-i` です。ペイン移動は WezTerm と同じ `Ctrl-q` のあとの `hjkl` です。`j` や `x` は Obsidian ではカーソル移動と文字削除のままにしてあります。
 
 ---
 

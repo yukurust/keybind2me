@@ -9,12 +9,13 @@
 # Space t | 新しいタブ
 # Ctrl-o / i | 戻る / 進む
 # gt / gT | 次 / 前タブ
-# Space q | 閉じる
+# Space q / Q | 閉じる / 戻す
 #
 # これより下を Vimium の keyMappings として読み込む。
 # unmapAll のあとで割り当て直すので、このファイルに無いキーは無効になる。
 # Zen を終了してから vimium/apply.sh を実行するとブラウザへ入る。
 # 半ページは Ctrl-d / Ctrl-u、タブは gt / gT、履歴は Ctrl-o / Ctrl-i。Vim の初期キーに合わせてある。
+# Space はリーダー。この設定が入ると Vimium が Space を受け取るので、ページのスクロールには渡らない。
 # f はリンクヒント、o は URL を開く。ブラウザには文字検索も行挿入もないので、ここだけ役割が違う。
 
 unmapAll

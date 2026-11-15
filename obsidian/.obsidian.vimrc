@@ -2,8 +2,7 @@
 " 基準は Vim / Neovim の初期キー。編集のキーは上書きしない。
 " 反映: obsidian/apply.sh のあと、Obsidian を再起動する。
 "
-" Vim と Neovim の初期キーはほぼ同じ。よく使う差は Y だけ。
-" Vim の Y は行ヤンク（yy）。Neovim の Y は行末までヤンク（y$）。
+" Y は Neovim に合わせ、カーソルから行末までヤンクする。行全体は yy。
 "
 " ノーマルモードの初期キー（両方）:
 " h j k l     1文字 / 1行
@@ -20,13 +19,16 @@
 " J           行の結合
 " gt gT       次のタブ / 前のタブ
 " Ctrl-o/i    ジャンプリストを戻る / 進む
-" Ctrl-w のあと h j k l   ウィンドウ移動
+" Ctrl-q のあと h j k l   ペイン移動。WezTerm のリーダーと同じ
 " m `         マーク
 "
 " よくあるカスタマイズで、ここにも入れてあるもの:
 " Space       リーダー
 " Space Space クイックスイッチャー（ファイルを開く）
 " Space /     保管庫の検索
+" Space t     新しいタブ
+" Space q     タブを閉じる
+" Space Q     閉じたタブを戻す
 " jk          インサートモードを抜ける
 " clipboard   ヤンクと貼り付けをシステムクリップボードと共有
 
@@ -44,3 +46,23 @@ nmap <Space><Space> :switcher
 
 exmap searchNotes obcommand global-search:open
 nmap <Space>/ :searchNotes
+
+exmap newTab obcommand workspace:new-tab
+nmap <Space>t :newTab
+
+exmap closeTab obcommand workspace:close
+nmap <Space>q :closeTab
+
+exmap reopenTab obcommand workspace:undo-close-pane
+nmap <Space>Q :reopenTab
+
+noremap Y y$
+
+exmap focusLeft obcommand editor:focus-left
+exmap focusDown obcommand editor:focus-bottom
+exmap focusUp obcommand editor:focus-top
+exmap focusRight obcommand editor:focus-right
+nmap <C-q>h :focusLeft
+nmap <C-q>j :focusDown
+nmap <C-q>k :focusUp
+nmap <C-q>l :focusRight

@@ -1,0 +1,102 @@
+# keybind2me が管理する Vimium キー設定。
+# 右の Dock チートシートは、下の sheet 行だけを読む。
+# sheet: スクロール
+# j/k/h/l | スクロール
+# gg / G | 先頭 / 末尾
+# d / u | 半ページ
+# f / F | リンクを開く
+# sheet: タブ
+# o / O | ページを開く
+# H / L | 戻る / 進む
+# J / K | 前タブ / 次タブ
+# x / X | 閉じる / 復元
+#
+# これより下を Vimium の keyMappings として読み込む。
+# unmapAll のあとで割り当て直すので、このファイルに無いキーは無効になる。
+# Zen を終了してから vimium/apply.sh を実行するとブラウザへ入る。
+
+unmapAll
+
+# ページ内の移動
+map j scrollDown
+map k scrollUp
+map h scrollLeft
+map l scrollRight
+map gg scrollToTop
+map G scrollToBottom
+map zH scrollToLeft
+map zL scrollToRight
+map <c-e> scrollDown
+map <c-y> scrollUp
+map d scrollPageDown
+map u scrollPageUp
+map r reload
+map R reload hard
+map yy copyCurrentUrl
+map p openCopiedUrlInCurrentTab
+map P openCopiedUrlInNewTab
+map gi focusInput
+map [[ goPrevious
+map ]] goNext
+map gf nextFrame
+map gF mainFrame
+map gu goUp
+map gU goToRoot
+map i enterInsertMode
+map v enterVisualMode
+map V enterVisualLineMode
+
+# リンクヒント
+map f LinkHints.activateMode
+map F LinkHints.activateModeToOpenInNewTab
+map <a-f> LinkHints.activateModeWithQueue
+map yf LinkHints.activateModeToCopyLinkUrl
+
+# 検索
+map / enterFindMode
+map n performFind
+map N performBackwardsFind
+map * findSelected
+map # findSelectedBackwards
+
+# Vomnibar
+map o Vomnibar.activate
+map O Vomnibar.activateInNewTab
+map T Vomnibar.activateTabSelection
+map b Vomnibar.activateBookmarks
+map B Vomnibar.activateBookmarksInNewTab
+map ge Vomnibar.activateEditUrl
+map gE Vomnibar.activateEditUrlInNewTab
+
+# 履歴
+map H goBack
+map L goForward
+
+# タブ
+map K nextTab
+map J previousTab
+map gt nextTab
+map gT previousTab
+map ^ visitPreviousTab
+map << moveTabLeft
+map >> moveTabRight
+map g0 firstTab
+map g$ lastTab
+map W moveTabToNewWindow
+map t createTab
+map yt duplicateTab
+map x removeTab
+map X restoreTab
+map <a-p> togglePinTab
+map <a-m> toggleMuteTab
+map zi zoomIn
+map zo zoomOut
+map z0 zoomReset
+
+# マーク
+map m Marks.activateCreateMode
+map ` Marks.activateGotoMode
+
+# その他
+map ? showHelp
+map gs toggleViewSource

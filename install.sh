@@ -71,7 +71,13 @@ mkdir -p "${HOME}/.config/wezterm"
 ln -sf "${TARGET_DIR}/wezterm/wezterm.lua" "${HOME}/.config/wezterm/wezterm.lua"
 ln -sf "${TARGET_DIR}/wezterm/keybinds.lua" "${HOME}/.config/wezterm/keybinds.lua"
 
-# 7. Reload AeroSpace and start JankyBorders if running
+# 7. Vimium key mappings (applied to Zen only when the browser is quit)
+echo "==> Configuring Vimium..."
+ln -sf "${TARGET_DIR}/vimium/key-mappings" "${HOME}/.config/aerospace/vimium-key-mappings"
+chmod +x "${TARGET_DIR}/vimium/apply.sh"
+"${TARGET_DIR}/vimium/apply.sh"
+
+# 8. Reload AeroSpace and start JankyBorders if running
 if command -v aerospace >/dev/null 2>&1; then
     echo "==> Reloading AeroSpace configuration..."
     aerospace reload-config || true

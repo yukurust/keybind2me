@@ -3,17 +3,19 @@
 # sheet: スクロール
 # j/k/h/l | スクロール
 # gg / G | 先頭 / 末尾
-# d / u | 半ページ
+# Ctrl-d / u | 半ページ
 # f / F | リンクを開く
 # sheet: タブ
-# o / O | ページを開く
-# H / L | 戻る / 進む
-# J / K | 前タブ / 次タブ
-# x / X | 閉じる / 復元
+# Space t | 新しいタブ
+# Ctrl-o / i | 戻る / 進む
+# gt / gT | 次 / 前タブ
+# Space q | 閉じる
 #
 # これより下を Vimium の keyMappings として読み込む。
 # unmapAll のあとで割り当て直すので、このファイルに無いキーは無効になる。
 # Zen を終了してから vimium/apply.sh を実行するとブラウザへ入る。
+# 半ページは Ctrl-d / Ctrl-u、タブは gt / gT、履歴は Ctrl-o / Ctrl-i。Vim の初期キーに合わせてある。
+# f はリンクヒント、o は URL を開く。ブラウザには文字検索も行挿入もないので、ここだけ役割が違う。
 
 unmapAll
 
@@ -28,10 +30,12 @@ map zH scrollToLeft
 map zL scrollToRight
 map <c-e> scrollDown
 map <c-y> scrollUp
-map d scrollPageDown
-map u scrollPageUp
-map r reload
-map R reload hard
+map <c-d> scrollPageDown
+map <c-u> scrollPageUp
+map <c-f> scrollFullPageDown
+map <c-b> scrollFullPageUp
+map <space>r reload
+map <space>R reload hard
 map yy copyCurrentUrl
 map p openCopiedUrlInCurrentTab
 map P openCopiedUrlInNewTab
@@ -68,25 +72,19 @@ map B Vomnibar.activateBookmarksInNewTab
 map ge Vomnibar.activateEditUrl
 map gE Vomnibar.activateEditUrlInNewTab
 
-# 履歴
-map H goBack
-map L goForward
+# 履歴。Vim のジャンプリスト Ctrl-o / Ctrl-i に合わせる。
+map <c-o> goBack
+map <c-i> goForward
 
-# タブ
-map K nextTab
-map J previousTab
+# タブ。Vim の gt / gT。新規と閉じるは Space リーダー。
 map gt nextTab
 map gT previousTab
+map <space>t createTab
+map <space>q removeTab
+map <space>Q restoreTab
 map ^ visitPreviousTab
-map << moveTabLeft
-map >> moveTabRight
 map g0 firstTab
 map g$ lastTab
-map W moveTabToNewWindow
-map t createTab
-map yt duplicateTab
-map x removeTab
-map X restoreTab
 map <a-p> togglePinTab
 map <a-m> toggleMuteTab
 map zi zoomIn
@@ -98,5 +96,5 @@ map m Marks.activateCreateMode
 map ` Marks.activateGotoMode
 
 # その他
-map ? showHelp
+map <space>? showHelp
 map gs toggleViewSource

@@ -93,7 +93,7 @@ vimium/apply.sh
 obsidian/apply.sh
 ```
 
-`j` や `x` のように文字が同じでも、ブラウザではスクロールやタブ、Obsidian ではカーソル移動や文字削除です。タブ移動の `gt` / `gT` だけを Vimium と揃えています。
+基準は Vim / Neovim の初期キーです。半ページは `Ctrl-d` / `Ctrl-u`、タブは `gt` / `gT`、履歴は `Ctrl-o` / `Ctrl-i` です。`j` や `x` は Obsidian ではカーソル移動と文字削除のままにしてあります。
 
 ---
 

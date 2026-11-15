@@ -24,6 +24,9 @@
   - macOS 26+ の純正 `NSGlassEffectView`（`.clear` スタイル）を採用し、OS の `システム設定 > 外観 > Liquid Glass` の強度設定にリアルタイム追従
 - **WezTerm**
   - キーボードドリブンなターミナル設定 & キーバインド（Leader: `Ctrl + Q`）
+- **Vimium (Zen)**
+  - キー割り当てを [`vimium/key-mappings`](vimium/key-mappings) で管理
+  - Zen を終了した状態で `vimium/apply.sh` を実行すると、その内容が Vimium に入る
 
 ---
 
@@ -41,6 +44,7 @@ curl -fsSL https://raw.githubusercontent.com/yukurust/keybind2me/main/install.sh
 3. `hud.swift` / `cheatsheet.swift` をネイティブコンパイルして `~/.config/aerospace/` に配置
 4. `JankyBorders` (`borders`) をインストール（Homebrew 失敗時はソースから自動ビルド）
 5. AeroSpace の設定を即時リロードし、`borders` を起動
+6. `vimium/key-mappings` を `~/.config/aerospace/vimium-key-mappings` にリンクし、Zen が終了していれば Vimium に書き込む
 
 ---
 
@@ -59,7 +63,7 @@ curl -fsSL https://raw.githubusercontent.com/yukurust/keybind2me/main/install.sh
 - **マウス追従**: `Option + H/J/K/L` などでフォーカスを移動すると、マウスカーソルが自動で移動先ウィンドウの中央（`move-mouse window-lazy-center`）へ追従します。
 
 ### 2. チートシートウィジェットの起動・終了
-画面左下の Dock 横にキーバインド一覧を表示したい場合は以下を実行します：
+Dock の左右に、同じガラス枠でキーバインド一覧を表示します。左が AeroSpace / WezTerm、右が Vimium です。
 
 ```bash
 # 起動
@@ -68,7 +72,14 @@ nohup ~/.config/aerospace/cheatsheet >/dev/null 2>&1 &
 # 終了
 killall cheatsheet
 ```
-※ Dock のアイコン数やサイズ変更、`システム設定 > 外観 > Liquid Glass` の透明度変更に自動で追従します。
+※ Dock のアイコン数やサイズ変更、`システム設定 > 外観 > Liquid Glass` の透明度変更に自動で追従します。右側の文言は `vimium/key-mappings` 先頭の `sheet:` 行です。
+
+### 3. Vimium のキーを変える
+[`vimium/key-mappings`](vimium/key-mappings) を編集します。`unmapAll` より下に書いた割り当てだけが有効です。反映するには Zen を終了してから次を実行します。
+
+```bash
+vimium/apply.sh
+```
 
 ---
 
@@ -100,7 +111,10 @@ keybind2me/
 │   ├── aerospace.toml   # AeroSpace 設定ファイル（JankyBorders・マウス追従含む）
 │   └── hud.swift        # ノッチ HUD (Swift ソースコード)
 ├── cheatsheet/
-│   └── cheatsheet.swift # Dock連動 Liquid Glass チートシート (Swift ソースコード)
+│   └── cheatsheet.swift # Dock 左右の Liquid Glass チートシート (Swift ソースコード)
+├── vimium/
+│   ├── key-mappings    # Vimium のキー割り当てと、右側チートシートの文言
+│   └── apply.sh        # Zen 終了時に key-mappings を Vimium へ書き込む
 ├── wezterm/
 │   ├── wezterm.lua      # WezTerm メイン設定
 │   └── keybinds.lua     # WezTerm キーバインド設定

@@ -6,18 +6,363 @@ class CheatSheetWindow: NSWindow {
     override var canBecomeMain: Bool { false }
 }
 
+struct CheatSheetItem {
+    let key: String
+    let detail: String
+}
+
+struct CheatSheetSection {
+    let title: String
+    let titleColor: NSColor
+    let items: [CheatSheetItem]
+}
+
+enum CheatSheetEdge {
+    case leading
+    case trailing
+}
+
+struct DockGeometry {
+    let x: CGFloat
+    let width: CGFloat
+    let yFromBottom: CGFloat
+    let height: CGFloat
+}
+
+enum VimiumSheet {
+    private static let palette: [NSColor] = [
+        NSColor(red: 0.98, green: 0.78, blue: 0.35, alpha: 1.0),
+        NSColor(red: 0.98, green: 0.55, blue: 0.42, alpha: 1.0),
+    ]
+
+    static let fallback: [CheatSheetSection] = [
+        CheatSheetSection(
+            title: "スクロール",
+            titleColor: palette[0],
+            items: [
+                CheatSheetItem(key: "j/k/h/l", detail: "スクロール"),
+                CheatSheetItem(key: "gg / G", detail: "先頭 / 末尾"),
+                CheatSheetItem(key: "d / u", detail: "半ページ"),
+                CheatSheetItem(key: "f / F", detail: "リンクを開く"),
+            ]
+        ),
+        CheatSheetSection(
+            title: "タブ",
+            titleColor: palette[1],
+            items: [
+                CheatSheetItem(key: "o / O", detail: "ページを開く"),
+                CheatSheetItem(key: "H / L", detail: "戻る / 進む"),
+                CheatSheetItem(key: "J / K", detail: "前タブ / 次タブ"),
+                CheatSheetItem(key: "x / X", detail: "閉じる / 復元"),
+            ]
+        ),
+    ]
+
+    static func load() -> [CheatSheetSection] {
+        guard let text = read(), !parse(text).isEmpty else { return fallback }
+        return parse(text)
+    }
+
+    static func sourceURL() -> URL? {
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        let candidates: [String] = [
+            ProcessInfo.processInfo.environment["KEYBIND2ME_VIMIUM"] ?? "",
+            home.appendingPathComponent(".config/aerospace/vimium-key-mappings").path,
+            home.appendingPathComponent("repos/github/keybind2me/vimium/key-mappings").path,
+        ]
+        return candidates
+            .filter { !$0.isEmpty }
+            .map { URL(fileURLWithPath: $0) }
+            .first { FileManager.default.fileExists(atPath: $0.path) }
+    }
+
+    private static func read() -> String? {
+        guard let url = sourceURL() else { return nil }
+        return try? String(contentsOf: url, encoding: .utf8)
+    }
+
+    static func parse(_ text: String) -> [CheatSheetSection] {
+        var titles: [String] = []
+        var rows: [[CheatSheetItem]] = []
+        var current = -1
+        for raw in text.split(separator: "\n", omittingEmptySubsequences: false) {
+            let line = raw.trimmingCharacters(in: .whitespaces)
+            guard line.hasPrefix("#") else { continue }
+            let body = line.dropFirst().trimmingCharacters(in: .whitespaces)
+            if body.hasPrefix("sheet:") {
+                let title = body.dropFirst("sheet:".count).trimmingCharacters(in: .whitespaces)
+                titles.append(String(title))
+                rows.append([])
+                current = titles.count - 1
+                continue
+            }
+            guard current >= 0, let bar = body.firstIndex(of: "|") else { continue }
+            let key = body[..<bar].trimmingCharacters(in: .whitespaces)
+            let detail = body[body.index(after: bar)...].trimmingCharacters(in: .whitespaces)
+            if key.isEmpty || detail.isEmpty { continue }
+            rows[current].append(CheatSheetItem(key: String(key), detail: String(detail)))
+        }
+        return zip(titles, rows).enumerated().compactMap { index, pair in
+            let (title, items) = pair
+            guard !items.isEmpty else { return nil }
+            return CheatSheetSection(
+                title: title,
+                titleColor: palette[index % palette.count],
+                items: items
+            )
+        }
+    }
+}
+
+final class CheatSheetPlate {
+    let edge: CheatSheetEdge
+    private let window: CheatSheetWindow
+    private let backgroundView: NSView
+    private let stack: NSStackView
+    private let dockHosting: NSView?
+    private let cornerRadius: CGFloat = 28
+    private var signature = ""
+
+    init(edge: CheatSheetEdge, sections: [CheatSheetSection], material: Material?) {
+        self.edge = edge
+        let initial = NSRect(x: 0, y: 6, width: 380, height: 80)
+        window = CheatSheetWindow(
+            contentRect: initial,
+            styleMask: [.borderless],
+            backing: .buffered,
+            defer: false
+        )
+        window.isOpaque = false
+        window.backgroundColor = .clear
+        window.hasShadow = false
+        window.level = .screenSaver
+        window.ignoresMouseEvents = true
+        window.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
+
+        stack = NSStackView(frame: NSRect(x: 16, y: 4, width: initial.width - 32, height: initial.height - 8))
+        stack.orientation = .horizontal
+        stack.distribution = .fillEqually
+        stack.spacing = 16
+
+        if let material {
+            let container = NSView(frame: NSRect(origin: .zero, size: initial.size))
+            let host = ClearHostingView(
+                rootView: DockGlassPlate(material: material, radius: cornerRadius)
+            )
+            host.frame = container.bounds
+            host.autoresizingMask = [.width, .height]
+            host.wantsLayer = true
+            host.layer?.backgroundColor = NSColor.clear.cgColor
+            container.wantsLayer = true
+            container.layer?.backgroundColor = NSColor.clear.cgColor
+            container.addSubview(host)
+            container.addSubview(stack)
+            dockHosting = host
+            backgroundView = container
+        } else if #available(macOS 26.0, *) {
+            let glassView = NSGlassEffectView(frame: NSRect(origin: .zero, size: initial.size))
+            glassView.cornerRadius = cornerRadius
+            let contentContainer = NSView(frame: NSRect(origin: .zero, size: initial.size))
+            contentContainer.addSubview(stack)
+            glassView.contentView = contentContainer
+            dockHosting = nil
+            backgroundView = glassView
+        } else {
+            let visualEffect = NSVisualEffectView(frame: NSRect(origin: .zero, size: initial.size))
+            visualEffect.material = .hudWindow
+            visualEffect.blendingMode = .behindWindow
+            visualEffect.state = .active
+            visualEffect.wantsLayer = true
+            visualEffect.layer?.cornerRadius = cornerRadius
+            visualEffect.layer?.cornerCurve = .continuous
+            visualEffect.layer?.masksToBounds = true
+            visualEffect.addSubview(stack)
+            dockHosting = nil
+            backgroundView = visualEffect
+        }
+
+        window.contentView = backgroundView
+        render(sections)
+        window.orderFrontRegardless()
+    }
+
+    func render(_ sections: [CheatSheetSection]) {
+        let next = sections.map { section in
+            section.title + "\n" + section.items.map { "\($0.key)|\($0.detail)" }.joined(separator: "\n")
+        }.joined(separator: "\n--\n")
+        if next == signature { return }
+        signature = next
+
+        for view in stack.arrangedSubviews {
+            stack.removeArrangedSubview(view)
+            view.removeFromSuperview()
+        }
+        for section in sections {
+            stack.addArrangedSubview(Self.makeSectionView(section))
+        }
+    }
+
+    func update(screen: NSScreen, dock: DockGeometry?) {
+        if #available(macOS 26.0, *), let glassView = backgroundView as? NSGlassEffectView {
+            Self.applySystemGlassSetting(to: glassView)
+        }
+
+        guard let rect = Self.frame(edge: edge, screen: screen, dock: dock) else {
+            window.orderOut(nil)
+            return
+        }
+        if !window.isVisible {
+            window.orderFrontRegardless()
+        }
+        guard window.frame != rect else { return }
+
+        window.setFrame(rect, display: true, animate: true)
+        backgroundView.frame = NSRect(origin: .zero, size: rect.size)
+        if let host = dockHosting {
+            host.frame = backgroundView.bounds
+        } else if #available(macOS 26.0, *), let glassView = backgroundView as? NSGlassEffectView {
+            glassView.cornerRadius = cornerRadius
+            glassView.contentView?.frame = backgroundView.bounds
+        } else {
+            backgroundView.layer?.cornerRadius = cornerRadius
+            backgroundView.layer?.cornerCurve = .continuous
+        }
+        stack.frame = NSRect(x: 16, y: 4, width: rect.width - 32, height: rect.height - 8)
+    }
+
+    private static func frame(edge: CheatSheetEdge, screen: NSScreen, dock: DockGeometry?) -> NSRect? {
+        let maxAllowedTop = screen.visibleFrame.minY - 1.0
+        if let dock {
+            var bottom = max(dock.yFromBottom - 1.0, 0)
+            let height = dock.height
+            if bottom + height > maxAllowedTop {
+                bottom = maxAllowedTop - height
+            }
+            switch edge {
+            case .leading:
+                let x = screen.frame.minX
+                let width = max(dock.x - x, 260)
+                return NSRect(x: x, y: bottom, width: width, height: height)
+            case .trailing:
+                let x = dock.x + dock.width
+                let width = screen.frame.maxX - x
+                guard width >= 180 else { return nil }
+                return NSRect(x: x, y: bottom, width: width, height: height)
+            }
+        }
+
+        let height = max(maxAllowedTop - 5, 60)
+        let width: CGFloat = 380
+        let x = edge == .leading ? screen.frame.minX : screen.frame.maxX - width
+        return NSRect(x: x, y: 5, width: width, height: height)
+    }
+
+    @available(macOS 26.0, *)
+    private static func applySystemGlassSetting(to glassView: NSGlassEffectView) {
+        CFPreferencesAppSynchronize(kCFPreferencesAnyApplication)
+        let rawVal = CFPreferencesCopyAppValue("NSGlassTintAmount" as CFString, kCFPreferencesAnyApplication)
+        let tintAmount: Double
+        if let num = rawVal as? NSNumber {
+            tintAmount = num.doubleValue
+        } else {
+            tintAmount = 0.0
+        }
+
+        let reduceTransparency = NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency
+        if glassView.style != .clear {
+            glassView.style = .clear
+        }
+
+        let isDark = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+        let baseColor = isDark ? NSColor(white: 0.12, alpha: 1.0) : NSColor(white: 0.94, alpha: 1.0)
+        if reduceTransparency {
+            glassView.tintColor = baseColor.withAlphaComponent(0.92)
+        } else {
+            let clamped = min(max(tintAmount, 0.0), 1.0)
+            let alpha = CGFloat(clamped * 0.65)
+            glassView.tintColor = alpha > 0.01 ? baseColor.withAlphaComponent(alpha) : nil
+        }
+    }
+
+    private static func makeSectionView(_ section: CheatSheetSection) -> NSView {
+        let container = NSStackView()
+        container.orientation = .vertical
+        container.alignment = .leading
+        container.spacing = 1.2
+
+        let header = NSTextField(labelWithString: section.title)
+        header.font = NSFont.systemFont(ofSize: 10.5, weight: .bold)
+        header.textColor = section.titleColor
+        header.isBezeled = false
+        header.drawsBackground = false
+        container.addArrangedSubview(header)
+
+        for item in section.items {
+            let row = NSStackView()
+            row.orientation = .horizontal
+            row.spacing = 6
+
+            let keyLabel = NSTextField(labelWithString: item.key)
+            keyLabel.font = NSFont.monospacedSystemFont(ofSize: 9.5, weight: .bold)
+            keyLabel.textColor = NSColor.white
+            keyLabel.isBezeled = false
+            keyLabel.drawsBackground = false
+
+            let descLabel = NSTextField(labelWithString: item.detail)
+            descLabel.font = NSFont.systemFont(ofSize: 9.5, weight: .regular)
+            descLabel.textColor = NSColor(white: 0.85, alpha: 1.0)
+            descLabel.isBezeled = false
+            descLabel.drawsBackground = false
+
+            row.addArrangedSubview(keyLabel)
+            row.addArrangedSubview(descLabel)
+            container.addArrangedSubview(row)
+        }
+        return container
+    }
+}
+
 class AppDelegate: NSObject, NSApplicationDelegate {
-    var window: CheatSheetWindow!
-    var backgroundView: NSView!
-    var dockHosting: NSView?
-    var stack: NSStackView!
+    var plates: [CheatSheetPlate] = []
     var updateTimer: Timer?
+    private var vimiumMtime: Date?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        setupWindow()
+        let material = DockGlassMaterial.make()
+        let leading = CheatSheetPlate(
+            edge: .leading,
+            sections: [
+                CheatSheetSection(
+                    title: "⌥ AeroSpace",
+                    titleColor: NSColor(red: 0.35, green: 0.78, blue: 0.98, alpha: 1.0),
+                    items: [
+                        CheatSheetItem(key: "H/J/K/L", detail: "フォーカス移動"),
+                        CheatSheetItem(key: "Shift+H/J/K/L", detail: "窓位置入れ替え"),
+                        CheatSheetItem(key: "- / ; / Shift+-", detail: "サイズ/等倍"),
+                        CheatSheetItem(key: "F / M", detail: "Float / Full"),
+                    ]
+                ),
+                CheatSheetSection(
+                    title: "⌃Q WezTerm",
+                    titleColor: NSColor(red: 0.60, green: 0.90, blue: 0.45, alpha: 1.0),
+                    items: [
+                        CheatSheetItem(key: "d / r", detail: "縦/横分割"),
+                        CheatSheetItem(key: "h/j/k/l", detail: "ペイン移動"),
+                        CheatSheetItem(key: "s → hjkl", detail: "サイズ変更"),
+                        CheatSheetItem(key: "z / x", detail: "最大化/閉じる"),
+                    ]
+                ),
+            ],
+            material: material
+        )
+        let trailing = CheatSheetPlate(edge: .trailing, sections: VimiumSheet.load(), material: material)
+        plates = [leading, trailing]
+        if !AXIsProcessTrusted() {
+            let key = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
+            AXIsProcessTrustedWithOptions([key: true] as CFDictionary)
+        }
         updateLayout()
 
-        // アプリ起動・終了時、または1.5秒ごとにDockの形状を完全実測して動的追従
         NSWorkspace.shared.notificationCenter.addObserver(
             self,
             selector: #selector(handleAppChange),
@@ -30,102 +375,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             name: NSWorkspace.didTerminateApplicationNotification,
             object: nil
         )
-
         updateTimer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] _ in
             self?.updateLayout()
         }
-    }
-
-    func setupWindow() {
-        let initialWidth: CGFloat = 380
-        let initialHeight: CGFloat = 80
-        let initialBottomMargin: CGFloat = 6
-        let cornerRadius: CGFloat = 28
-
-        window = CheatSheetWindow(
-            contentRect: NSRect(x: 0, y: initialBottomMargin, width: initialWidth, height: initialHeight),
-            styleMask: [.borderless],
-            backing: .buffered,
-            defer: false
-        )
-
-        window.isOpaque = false
-        window.backgroundColor = .clear
-        window.hasShadow = false
-        window.level = .screenSaver
-        window.ignoresMouseEvents = true
-        window.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
-
-        stack = NSStackView(frame: NSRect(x: 16, y: 4, width: initialWidth - 32, height: initialHeight - 8))
-        stack.orientation = .horizontal
-        stack.distribution = .fillEqually
-        stack.spacing = 16
-
-        let aeroView = makeSectionView(
-            title: "⌥ AeroSpace",
-            titleColor: NSColor(red: 0.35, green: 0.78, blue: 0.98, alpha: 1.0),
-            items: [
-                ("H/J/K/L", "フォーカス移動"),
-                ("Shift+H/J/K/L", "窓位置入れ替え"),
-                ("- / ; / Shift+-", "サイズ/等倍"),
-                ("F / M", "Float / Full")
-            ]
-        )
-
-        let wezView = makeSectionView(
-            title: "⌃Q WezTerm",
-            titleColor: NSColor(red: 0.60, green: 0.90, blue: 0.45, alpha: 1.0),
-            items: [
-                ("d / r", "縦/横分割"),
-                ("h/j/k/l", "ペイン移動"),
-                ("s → hjkl", "サイズ変更"),
-                ("z / x", "最大化/閉じる")
-            ]
-        )
-
-        stack.addArrangedSubview(aeroView)
-        stack.addArrangedSubview(wezView)
-
-        if let material = DockGlassMaterial.make() {
-            // Dock と同じ DesignLibrary.GlassMaterialProvider.Configuration.dock
-            let container = NSView(frame: NSRect(x: 0, y: 0, width: initialWidth, height: initialHeight))
-            let host = ClearHostingView(rootView: DockGlassPlate(material: material, radius: cornerRadius))
-            host.frame = container.bounds
-            host.autoresizingMask = [.width, .height]
-            host.wantsLayer = true
-            host.layer?.backgroundColor = NSColor.clear.cgColor
-            container.wantsLayer = true
-            container.layer?.backgroundColor = NSColor.clear.cgColor
-            container.addSubview(host)
-            container.addSubview(stack)
-            dockHosting = host
-            backgroundView = container
-        } else if #available(macOS 26.0, *) {
-            let glassView = NSGlassEffectView(frame: NSRect(x: 0, y: 0, width: initialWidth, height: initialHeight))
-            glassView.cornerRadius = cornerRadius
-
-            let contentContainer = NSView(frame: NSRect(x: 0, y: 0, width: initialWidth, height: initialHeight))
-            contentContainer.addSubview(stack)
-            glassView.contentView = contentContainer
-
-            backgroundView = glassView
-            applySystemGlassSetting(to: glassView)
-        } else {
-            let visualEffect = NSVisualEffectView(frame: NSRect(x: 0, y: 0, width: initialWidth, height: initialHeight))
-            visualEffect.material = .hudWindow
-            visualEffect.blendingMode = .behindWindow
-            visualEffect.state = .active
-            visualEffect.wantsLayer = true
-            visualEffect.layer?.cornerRadius = cornerRadius
-            visualEffect.layer?.cornerCurve = .continuous
-            visualEffect.layer?.masksToBounds = true
-            visualEffect.addSubview(stack)
-
-            backgroundView = visualEffect
-        }
-
-        window.contentView = backgroundView
-        window.orderFrontRegardless()
     }
 
     @objc func handleAppChange() {
@@ -134,162 +386,48 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    struct DockGeometry {
-        let x: CGFloat
-        let yFromBottom: CGFloat
-        let height: CGFloat
-    }
-
-    func getExactDockGeometry() -> DockGeometry? {
+    // 以前と同じく、アクセシビリティで Dock の実寸を読む。
+    // 幅は左端まで、高さはタイルの高さ、下端は実測位置から 1px だけ詰める。
+    func dockGeometry() -> DockGeometry? {
         guard let screen = NSScreen.main else { return nil }
         let apps = NSRunningApplication.runningApplications(withBundleIdentifier: "com.apple.dock")
         guard let dockApp = apps.first else { return nil }
         let axApp = AXUIElementCreateApplication(dockApp.processIdentifier)
         var value: AnyObject?
-        if AXUIElementCopyAttributeValue(axApp, kAXChildrenAttribute as CFString, &value) == .success,
-           let children = value as? [AXUIElement] {
-            for child in children {
-                var posVal: AnyObject?, sizeVal: AnyObject?
-                if AXUIElementCopyAttributeValue(child, kAXPositionAttribute as CFString, &posVal) == .success,
-                   AXUIElementCopyAttributeValue(child, kAXSizeAttribute as CFString, &sizeVal) == .success,
-                   let p = posVal, let s = sizeVal {
-                    var pos = CGPoint.zero, size = CGSize.zero
-                    if AXValueGetValue(p as! AXValue, .cgPoint, &pos),
-                       AXValueGetValue(s as! AXValue, .cgSize, &size),
-                       pos.x > 0 && size.height > 20 {
-                        let yFromBottom = screen.frame.height - (pos.y + size.height)
-                        return DockGeometry(x: pos.x, yFromBottom: yFromBottom, height: size.height)
-                    }
-                }
-            }
+        guard AXUIElementCopyAttributeValue(axApp, kAXChildrenAttribute as CFString, &value) == .success,
+              let children = value as? [AXUIElement] else { return nil }
+        for child in children {
+            var posVal: AnyObject?
+            var sizeVal: AnyObject?
+            guard AXUIElementCopyAttributeValue(child, kAXPositionAttribute as CFString, &posVal) == .success,
+                  AXUIElementCopyAttributeValue(child, kAXSizeAttribute as CFString, &sizeVal) == .success,
+                  let posVal, let sizeVal else { continue }
+            var pos = CGPoint.zero
+            var size = CGSize.zero
+            guard AXValueGetValue(posVal as! AXValue, .cgPoint, &pos),
+                  AXValueGetValue(sizeVal as! AXValue, .cgSize, &size),
+                  pos.x > 0, size.height > 20 else { continue }
+            let yFromBottom = screen.frame.height - (pos.y + size.height)
+            return DockGeometry(x: pos.x, width: size.width, yFromBottom: yFromBottom, height: size.height)
         }
         return nil
     }
 
-    @available(macOS 26.0, *)
-    func applySystemGlassSetting(to glassView: NSGlassEffectView) {
-        // システム設定 > 外観 > Liquid Glass の強度 (NSGlassTintAmount: 0.0〜1.0) をキャッシュなしで最新取得
-        CFPreferencesAppSynchronize(kCFPreferencesAnyApplication)
-        let rawVal = CFPreferencesCopyAppValue("NSGlassTintAmount" as CFString, kCFPreferencesAnyApplication)
-        let tintAmount: Double
-        if let num = rawVal as? NSNumber {
-            tintAmount = num.doubleValue
-        } else {
-            tintAmount = 0.0
-        }
-
-        // システム設定 > アクセシビリティ > 透明度を下げる
-        let reduceTransparency = NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency
-
-        // ベースは常に公式の .clear スタイルを維持（自然な透明感・光沢控えめ）
-        if glassView.style != .clear {
-            glassView.style = .clear
-        }
-
-        let isDark = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-        let baseColor = isDark ? NSColor(white: 0.12, alpha: 1.0) : NSColor(white: 0.94, alpha: 1.0)
-
-        if reduceTransparency {
-            // 透明度を下げるがONのときはしっかり不透明に
-            glassView.tintColor = baseColor.withAlphaComponent(0.92)
-        } else {
-            // OSの Liquid Glass スライダー (0.0〜1.0) に比例して透過度合いを連続的に変化させる
-            let clamped = min(max(tintAmount, 0.0), 1.0)
-            let alpha = CGFloat(clamped * 0.65)
-            glassView.tintColor = alpha > 0.01 ? baseColor.withAlphaComponent(alpha) : nil
-        }
-    }
-
     func updateLayout() {
         guard let screen = NSScreen.main else { return }
-
-        if #available(macOS 26.0, *), let glassView = backgroundView as? NSGlassEffectView {
-            applySystemGlassSetting(to: glassView)
-        }
-
-        // ウィンドウやアプリの作業領域の下端（Dockの上限ライン = visibleFrame.minY）
-        // 上部に1pxの隙間をあけるため - 1.0
-        let maxAllowedTop = screen.visibleFrame.minY - 1.0
-
-        let targetWidth: CGFloat
-        var targetHeight: CGFloat
-        var bottomMargin: CGFloat
-
-        if let geo = getExactDockGeometry() {
-            targetWidth = max(geo.x, 260)
-            targetHeight = geo.height
-            // bottomのgapを1px小さくする (geo.yFromBottom - 1.0)
-            bottomMargin = max(geo.yFromBottom - 1.0, 0)
-
-            // 上端が maxAllowedTop (visibleFrame.minY - 1px) を超えないよう調整
-            let currentTop = bottomMargin + targetHeight
-            if currentTop > maxAllowedTop {
-                bottomMargin = maxAllowedTop - targetHeight
-            }
-        } else {
-            targetWidth = 380
-            targetHeight = max(maxAllowedTop - 5, 60)
-            bottomMargin = 5
-        }
-
-        let leftMargin: CGFloat = 0
-        let newFrame = NSRect(x: leftMargin, y: bottomMargin, width: targetWidth, height: targetHeight)
-
-        if window.frame != newFrame {
-            window.setFrame(newFrame, display: true, animate: true)
-            backgroundView.frame = NSRect(x: 0, y: 0, width: targetWidth, height: targetHeight)
-            let cornerRadius: CGFloat = 28
-
-            if let host = dockHosting {
-                host.frame = NSRect(x: 0, y: 0, width: targetWidth, height: targetHeight)
-            } else if #available(macOS 26.0, *), let glassView = backgroundView as? NSGlassEffectView {
-                glassView.cornerRadius = cornerRadius
-                glassView.contentView?.frame = NSRect(x: 0, y: 0, width: targetWidth, height: targetHeight)
-            } else {
-                backgroundView.layer?.cornerRadius = cornerRadius
-                backgroundView.layer?.cornerCurve = .continuous
-            }
-
-            stack.frame = NSRect(x: 16, y: 4, width: targetWidth - 32, height: targetHeight - 8)
+        reloadVimiumSheet()
+        let dock = dockGeometry()
+        for plate in plates {
+            plate.update(screen: screen, dock: dock)
         }
     }
 
-    func makeSectionView(title: String, titleColor: NSColor, items: [(String, String)]) -> NSView {
-        let container = NSStackView()
-        container.orientation = .vertical
-        container.alignment = .leading
-        container.spacing = 1.2
-
-        let header = NSTextField(labelWithString: title)
-        header.font = NSFont.systemFont(ofSize: 10.5, weight: .bold)
-        header.textColor = titleColor
-        header.isBezeled = false
-        header.drawsBackground = false
-        container.addArrangedSubview(header)
-
-        for (key, desc) in items {
-            let row = NSStackView()
-            row.orientation = .horizontal
-            row.spacing = 6
-
-            let keyLabel = NSTextField(labelWithString: key)
-            keyLabel.font = NSFont.monospacedSystemFont(ofSize: 9.5, weight: .bold)
-            keyLabel.textColor = NSColor.white
-            keyLabel.isBezeled = false
-            keyLabel.drawsBackground = false
-
-            let descLabel = NSTextField(labelWithString: desc)
-            descLabel.font = NSFont.systemFont(ofSize: 9.5, weight: .regular)
-            descLabel.textColor = NSColor(white: 0.85, alpha: 1.0)
-            descLabel.isBezeled = false
-            descLabel.drawsBackground = false
-
-            row.addArrangedSubview(keyLabel)
-            row.addArrangedSubview(descLabel)
-            container.addArrangedSubview(row)
-        }
-
-        return container
+    private func reloadVimiumSheet() {
+        guard let url = VimiumSheet.sourceURL() else { return }
+        let mtime = (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate
+        if mtime == vimiumMtime { return }
+        vimiumMtime = mtime
+        plates.first { $0.edge == .trailing }?.render(VimiumSheet.load())
     }
 }
 

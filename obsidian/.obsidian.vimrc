@@ -20,6 +20,7 @@
 " gt gT       次のタブ / 前のタブ
 " Ctrl-o/i    ジャンプリストを戻る / 進む
 " Ctrl-q のあと h j k l   ペイン移動。WezTerm のリーダーと同じ
+" Obsidian の Ctrl-q は初期状態で矩形選択なので、先に外す。矩形選択は Ctrl-v
 " m `         マーク
 "
 " よくあるカスタマイズで、ここにも入れてあるもの:
@@ -57,6 +58,8 @@ exmap reopenTab obcommand workspace:undo-close-pane
 nmap <Space>Q :reopenTab
 
 noremap Y y$
+
+unmap <C-q>
 
 exmap focusLeft obcommand editor:focus-left
 exmap focusDown obcommand editor:focus-bottom

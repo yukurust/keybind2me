@@ -37,35 +37,38 @@ set clipboard=unnamed
 
 imap jk <Esc>
 
+" Space は初期状態で右へ1文字動く。外さないとリーダーにならない。
+unmap <Space>
+" Ctrl-q は初期状態で矩形選択。外さないとペイン移動にならない。
+unmap <C-q>
+
 exmap nextTab obcommand workspace:next-tab
 exmap prevTab obcommand workspace:previous-tab
-nmap gt :nextTab
-nmap gT :prevTab
+nmap gt :nextTab<CR>
+nmap gT :prevTab<CR>
 
 exmap switcher obcommand switcher:open
-nmap <Space><Space> :switcher
+nmap <Space><Space> :switcher<CR>
 
 exmap searchNotes obcommand global-search:open
-nmap <Space>/ :searchNotes
+nmap <Space>/ :searchNotes<CR>
 
 exmap newTab obcommand workspace:new-tab
-nmap <Space>t :newTab
+nmap <Space>t :newTab<CR>
 
 exmap closeTab obcommand workspace:close
-nmap <Space>q :closeTab
+nmap <Space>q :closeTab<CR>
 
 exmap reopenTab obcommand workspace:undo-close-pane
-nmap <Space>Q :reopenTab
+nmap <Space>Q :reopenTab<CR>
 
 noremap Y y$
-
-unmap <C-q>
 
 exmap focusLeft obcommand editor:focus-left
 exmap focusDown obcommand editor:focus-bottom
 exmap focusUp obcommand editor:focus-top
 exmap focusRight obcommand editor:focus-right
-nmap <C-q>h :focusLeft
-nmap <C-q>j :focusDown
-nmap <C-q>k :focusUp
-nmap <C-q>l :focusRight
+nmap <C-q>h :focusLeft<CR>
+nmap <C-q>j :focusDown<CR>
+nmap <C-q>k :focusUp<CR>
+nmap <C-q>l :focusRight<CR>

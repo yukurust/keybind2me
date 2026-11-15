@@ -1,0 +1,68 @@
+" keybind2me が管理する Obsidian Vim 設定。
+" 基準は Vim / Neovim の初期キー。編集のキーは上書きしない。
+" 反映: obsidian/apply.sh のあと、Obsidian を再起動する。
+"
+" Y は Neovim に合わせ、カーソルから行末までヤンクする。行全体は yy。
+"
+" ノーマルモードの初期キー（両方）:
+" h j k l     1文字 / 1行
+" w b e       単語
+" 0 ^ $       行頭 / 最初の非空白 / 行末
+" gg G        ファイル先頭 / 末尾
+" Ctrl-d/u    半ページ。Ctrl-f/b は1ページ。Ctrl-e/y は1行スクロール
+" H M L       画面の上 / 中央 / 下
+" f F t T     その行の文字へ移動
+" / ? n N     検索
+" i a o O     挿入。v V Ctrl-v は選択
+" d c y       削除 / 変更 / ヤンク。x は1文字削除。p は貼り付け
+" u Ctrl-r    元に戻す / やり直す
+" J           行の結合
+" gt gT       次のタブ / 前のタブ
+" Ctrl-o/i    ジャンプリストを戻る / 進む
+" Ctrl-q のあと h j k l   ペイン移動。WezTerm のリーダーと同じ
+" m `         マーク
+"
+" よくあるカスタマイズで、ここにも入れてあるもの:
+" Space       リーダー
+" Space Space クイックスイッチャー（ファイルを開く）
+" Space /     保管庫の検索
+" Space t     新しいタブ
+" Space q     タブを閉じる
+" Space Q     閉じたタブを戻す
+" jk          インサートモードを抜ける
+" clipboard   ヤンクと貼り付けをシステムクリップボードと共有
+
+set clipboard=unnamed
+
+imap jk <Esc>
+
+exmap nextTab obcommand workspace:next-tab
+exmap prevTab obcommand workspace:previous-tab
+nmap gt :nextTab
+nmap gT :prevTab
+
+exmap switcher obcommand switcher:open
+nmap <Space><Space> :switcher
+
+exmap searchNotes obcommand global-search:open
+nmap <Space>/ :searchNotes
+
+exmap newTab obcommand workspace:new-tab
+nmap <Space>t :newTab
+
+exmap closeTab obcommand workspace:close
+nmap <Space>q :closeTab
+
+exmap reopenTab obcommand workspace:undo-close-pane
+nmap <Space>Q :reopenTab
+
+noremap Y y$
+
+exmap focusLeft obcommand editor:focus-left
+exmap focusDown obcommand editor:focus-bottom
+exmap focusUp obcommand editor:focus-top
+exmap focusRight obcommand editor:focus-right
+nmap <C-q>h :focusLeft
+nmap <C-q>j :focusDown
+nmap <C-q>k :focusUp
+nmap <C-q>l :focusRight

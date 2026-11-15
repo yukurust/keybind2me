@@ -28,9 +28,9 @@
   - キー割り当てを [`vimium/key-mappings`](vimium/key-mappings) で管理
   - Zen を終了した状態で `vimium/apply.sh` を実行すると、その内容が Vimium に入る
 - **Obsidian Vim**
-  - ノート内の操作は Obsidian 標準の Vim モード
-  - 追加の割り当てを [`obsidian/.obsidian.vimrc`](obsidian/.obsidian.vimrc) で管理し、保管庫へリンクする
-  - 同じキーでも Vimium とは動作が違う。違いは vimrc 先頭の表に書いてある
+  - 編集画面は Obsidian 標準の Vim モードと [`obsidian/.obsidian.vimrc`](obsidian/.obsidian.vimrc)
+  - 閲覧画面のスクロール、タブ、ペインは [`obsidian/reading-vim`](obsidian/reading-vim)
+  - 文字の削除や挿入は閲覧画面には無い
 
 ---
 
@@ -93,7 +93,7 @@ vimium/apply.sh
 obsidian/apply.sh
 ```
 
-基準は Vim / Neovim の初期キーです。半ページは `Ctrl-d` / `Ctrl-u`、タブ移動は `gt` / `gT`、タブの開閉は `Space t` / `Space q` / `Space Q`、履歴は `Ctrl-o` / `Ctrl-i` です。ペイン移動は WezTerm と同じ `Ctrl-q` のあとの `hjkl` です。`j` や `x` は Obsidian ではカーソル移動と文字削除のままにしてあります。
+基準は Vim / Neovim の初期キーです。半ページは `Ctrl-d` / `Ctrl-u`、タブ移動は `gt` / `gT`、タブの開閉は `Space t` / `Space q` / `Space Q`、履歴は `Ctrl-o` / `Ctrl-i` です。ペイン移動は WezTerm と同じ `Ctrl-q` のあとの `hjkl` です。閲覧画面でも、スクロールとこれらの移動は同じキーです。`x` や `d` のような文字の編集は、編集画面だけです。
 
 ---
 
@@ -130,8 +130,9 @@ keybind2me/
 │   ├── key-mappings    # Vimium のキー割り当てと、右側チートシートの文言
 │   └── apply.sh        # Zen 終了時に key-mappings を Vimium へ書き込む
 ├── obsidian/
-│   ├── .obsidian.vimrc # Obsidian Vim の追加割り当てと、Vimium との相違
-│   └── apply.sh        # 保管庫へ .obsidian.vimrc をリンクする
+│   ├── .obsidian.vimrc # 編集画面の追加割り当て
+│   ├── reading-vim/    # 閲覧画面のスクロール、タブ、ペイン
+│   └── apply.sh        # 保管庫へ vimrc と閲覧用プラグインをリンクする
 ├── wezterm/
 │   ├── wezterm.lua      # WezTerm メイン設定
 │   └── keybinds.lua     # WezTerm キーバインド設定

@@ -3,11 +3,11 @@
 # sheet: スクロール
 # j/k/h/l | スクロール
 # gg / G | 先頭 / 末尾
-# Ctrl-d / u | 半ページ
+# Ctrl-d / Ctrl-u | 半ページ
 # f / F | リンクを開く
 # sheet: タブ
 # Space t | 新しいタブ
-# Ctrl-o / i | 戻る / 進む
+# Ctrl-o / Ctrl-i | 戻る / 進む
 # gt / gT | 次 / 前タブ
 # Space q / Q | 閉じる / 戻す
 #

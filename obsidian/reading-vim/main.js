@@ -61,8 +61,45 @@ module.exports = class ReadingVimPlugin extends Plugin {
     this.app.commands.executeCommandById(id);
   }
 
+  terminalView(evt) {
+    const view = this.app.workspace.activeLeaf?.view;
+    if (!view?.containerEl?.contains(evt.target)) return null;
+    const type = String(view.getViewType?.() ?? "");
+    if (type.toLowerCase().includes("terminal")) return view;
+    if (evt.target instanceof Element && evt.target.closest(".xterm")) return view;
+    return null;
+  }
+
+  leaveTerminal(direction) {
+    const active = document.activeElement;
+    if (active instanceof HTMLElement) active.blur();
+    this.run(`editor:focus-${direction}`);
+  }
+
+  onTerminalKey(evt) {
+    const key = evt.key;
+    if (this.chord === "C-q") {
+      const direction = { h: "left", j: "bottom", k: "top", l: "right" }[key];
+      this.clearChord();
+      if (!direction) return;
+      evt.preventDefault();
+      evt.stopPropagation();
+      this.leaveTerminal(direction);
+      return;
+    }
+    if (evt.ctrlKey && key.toLowerCase() === "q") {
+      evt.preventDefault();
+      evt.stopPropagation();
+      this.armChord("C-q");
+    }
+  }
+
   onKeydown(evt) {
     if (evt.metaKey || evt.altKey || evt.isComposing || evt.repeat) return;
+    if (this.terminalView(evt)) {
+      this.onTerminalKey(evt);
+      return;
+    }
     if (typingTarget(evt.target)) return;
     const scroll = this.surface();
     if (!scroll) return;

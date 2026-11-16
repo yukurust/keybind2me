@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>launch-at-login</key>
+	<true/>
+	<key>show-menubar-icon</key>
+	<true/>
+	<key>enable-hyper-key</key>
+	<false/>
+	<key>hide-labels-when-nothing-is-searched</key>
+	<false/>
+	<key>is-auto-click-enabled</key>
+	<false/>
+	<key>is-scroll-shortcuts-enabled</key>
+	<true/>
+	<key>scroll-show-numbers</key>
+	<true/>
+	<key>scroll-keys</key>
+	<string>hjkl</string>
+	<key>search-shortcut</key>
+	<dict>
+		<key>keyCode</key>
+		<integer>49</integer>
+		<key>modifierFlags</key>
+		<integer>1179648</integer>
+		<key>characters</key>
+		<string> </string>
+		<key>charactersIgnoringModifiers</key>
+		<string> </string>
+	</dict>
+	<key>scroll-shortcut</key>
+	<dict>
+		<key>keyCode</key>
+		<integer>38</integer>
+		<key>modifierFlags</key>
+		<integer>1179648</integer>
+		<key>characters</key>
+		<string>J</string>
+		<key>charactersIgnoringModifiers</key>
+		<string>j</string>
+	</dict>
+</dict>
+</plist>

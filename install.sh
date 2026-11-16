@@ -39,6 +39,14 @@ mkdir -p "${TARGET_DIR}/cheatsheet"
 clang -O0 -c "${TARGET_DIR}/cheatsheet/dock_glass.c" -o /tmp/saithe-dock_glass.o
 swiftc -O "${TARGET_DIR}/cheatsheet/cheatsheet.swift" /tmp/saithe-dock_glass.o -o "${HOME}/.config/aerospace/cheatsheet"
 
+# 4b. Start the cheat sheet at login
+echo "==> Installing cheat sheet LaunchAgent..."
+mkdir -p "${HOME}/Library/LaunchAgents"
+sed "s|__HOME__|${HOME}|g" "${TARGET_DIR}/cheatsheet/com.yukurust.keybind2me.cheatsheet.plist" \
+    > "${HOME}/Library/LaunchAgents/com.yukurust.keybind2me.cheatsheet.plist"
+launchctl bootout "gui/$(id -u)/com.yukurust.keybind2me.cheatsheet" 2>/dev/null || true
+launchctl bootstrap "gui/$(id -u)" "${HOME}/Library/LaunchAgents/com.yukurust.keybind2me.cheatsheet.plist"
+
 # 5. Install JankyBorders (active window border)
 if ! command -v borders >/dev/null 2>&1; then
     echo "==> Installing JankyBorders..."
@@ -95,4 +103,4 @@ fi
 
 echo ""
 echo "✨ keybind2me installation complete!"
-echo "Run '${HOME}/.config/aerospace/cheatsheet &' to show the cheat sheet widget."
+echo "The cheat sheet starts at login via ~/Library/LaunchAgents/com.yukurust.keybind2me.cheatsheet.plist"

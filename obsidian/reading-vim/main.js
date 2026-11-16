@@ -9,26 +9,17 @@ function typingTarget(target) {
   );
 }
 
-function scroller(view) {
-  return view.previewMode?.containerEl ?? null;
+function scrollBy(el, top, left) {
+  el?.scrollBy({ top, left });
 }
 
-function scrollBy(view, top, left) {
-  const el = scroller(view);
-  if (!el) return;
-  el.scrollBy({ top, left });
-}
-
-function scrollPage(view, direction) {
-  const el = scroller(view);
+function scrollPage(el, direction) {
   if (!el) return;
   el.scrollBy({ top: el.clientHeight * direction });
 }
 
-function scrollEdge(view, top) {
-  const el = scroller(view);
-  if (!el) return;
-  el.scrollTo({ top });
+function scrollEdge(el, top) {
+  el?.scrollTo({ top });
 }
 
 module.exports = class ReadingVimPlugin extends Plugin {
@@ -52,10 +43,18 @@ module.exports = class ReadingVimPlugin extends Plugin {
     this.timer = window.setTimeout(() => this.clearChord(), CHORD_MS);
   }
 
-  previewView() {
-    const view = this.app.workspace.getActiveViewOfType(MarkdownView);
-    if (!view || view.getMode() !== "preview") return null;
-    return view;
+  surface() {
+    const view = this.app.workspace.activeLeaf?.view;
+    if (!view) return null;
+    if (view instanceof MarkdownView && view.getMode() === "preview") {
+      return view.previewMode?.containerEl ?? null;
+    }
+    if (view.getViewType?.() === "hearth-home-view") {
+      const remembered = view.scrollEl;
+      if (remembered?.isConnected) return remembered;
+      return view.containerEl?.querySelector(".hearth-scroll") ?? view.containerEl ?? null;
+    }
+    return null;
   }
 
   run(id) {
@@ -65,8 +64,8 @@ module.exports = class ReadingVimPlugin extends Plugin {
   onKeydown(evt) {
     if (evt.metaKey || evt.altKey || evt.isComposing || evt.repeat) return;
     if (typingTarget(evt.target)) return;
-    const view = this.previewView();
-    if (!view) return;
+    const scroll = this.surface();
+    if (!scroll) return;
 
     const key = evt.key;
     if (this.chord === "C-q") {
@@ -83,7 +82,7 @@ module.exports = class ReadingVimPlugin extends Plugin {
       if (key === "g") {
         evt.preventDefault();
         evt.stopPropagation();
-        scrollEdge(view, 0);
+        scrollEdge(scroll, 0);
         return;
       }
       if (key === "t" || key === "T") {
@@ -121,7 +120,7 @@ module.exports = class ReadingVimPlugin extends Plugin {
       if (distance) {
         evt.preventDefault();
         evt.stopPropagation();
-        scrollPage(view, distance);
+        scrollPage(scroll, distance);
         return;
       }
       if (key.toLowerCase() === "o" || key.toLowerCase() === "i") {
@@ -141,17 +140,16 @@ module.exports = class ReadingVimPlugin extends Plugin {
       evt.preventDefault();
       evt.stopPropagation();
       const step = 64;
-      if (key === "j") scrollBy(view, step, 0);
-      if (key === "k") scrollBy(view, -step, 0);
-      if (key === "h") scrollBy(view, 0, -step);
-      if (key === "l") scrollBy(view, 0, step);
+      if (key === "j") scrollBy(scroll, step, 0);
+      if (key === "k") scrollBy(scroll, -step, 0);
+      if (key === "h") scrollBy(scroll, 0, -step);
+      if (key === "l") scrollBy(scroll, 0, step);
       return;
     }
     if (key === "G") {
       evt.preventDefault();
       evt.stopPropagation();
-      const el = scroller(view);
-      if (el) scrollEdge(view, el.scrollHeight);
+      scrollEdge(scroll, scroll.scrollHeight);
     }
   }
 };

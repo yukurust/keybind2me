@@ -29,7 +29,7 @@
   - Zen を終了した状態で `vimium/apply.sh` を実行すると、その内容が Vimium に入る
 - **Obsidian Vim**
   - 編集画面は Obsidian 標準の Vim モードと [`obsidian/.obsidian.vimrc`](obsidian/.obsidian.vimrc)
-  - 閲覧画面のスクロール、タブ、ペインは [`obsidian/reading-vim`](obsidian/reading-vim)
+  - 閲覧画面と Hearth Home のスクロール、タブ、ペインは [`obsidian/reading-vim`](obsidian/reading-vim)
   - 文字の削除や挿入は閲覧画面には無い
 
 ---
@@ -93,7 +93,7 @@ vimium/apply.sh
 obsidian/apply.sh
 ```
 
-基準は Vim / Neovim の初期キーです。半ページは `Ctrl-d` / `Ctrl-u`、タブ移動は `gt` / `gT`、タブの開閉は `Space t` / `Space q` / `Space Q`、履歴は `Ctrl-o` / `Ctrl-i` です。ペイン移動は WezTerm と同じ `Ctrl-q` のあとの `hjkl` です。閲覧画面でも、スクロールとこれらの移動は同じキーです。`x` や `d` のような文字の編集は、編集画面だけです。
+基準は Vim / Neovim の初期キーです。半ページは `Ctrl-d` / `Ctrl-u`、タブ移動は `gt` / `gT`、タブの開閉は `Space t` / `Space q` / `Space Q`、履歴は `Ctrl-o` / `Ctrl-i` です。ペイン移動は WezTerm と同じ `Ctrl-q` のあとの `hjkl` です。閲覧画面と Hearth Home でも、スクロールとこれらの移動は同じキーです。`x` や `d` のような文字の編集は、編集画面だけです。
 
 ---
 
@@ -131,7 +131,7 @@ keybind2me/
 │   └── apply.sh        # Zen 終了時に key-mappings を Vimium へ書き込む
 ├── obsidian/
 │   ├── .obsidian.vimrc # 編集画面の追加割り当て
-│   ├── reading-vim/    # 閲覧画面のスクロール、タブ、ペイン
+│   ├── reading-vim/    # 閲覧画面と Hearth Home のスクロール、タブ、ペイン
 │   └── apply.sh        # 保管庫へ vimrc と閲覧用プラグインをリンクする
 ├── wezterm/
 │   ├── wezterm.lua      # WezTerm メイン設定

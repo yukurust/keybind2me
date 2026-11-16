@@ -93,7 +93,7 @@ vimium/apply.sh
 obsidian/apply.sh
 ```
 
-基準は Vim / Neovim の初期キーです。半ページは `Ctrl-d` / `Ctrl-u`、タブ移動は `gt` / `gT`、タブの開閉は `Space t` / `Space q` / `Space Q`、履歴は `Ctrl-o` / `Ctrl-i` です。ペイン移動は WezTerm と同じ `Ctrl-q` のあとの `hjkl` です。閲覧画面、Hearth Home、Terminal のコンソールでも、ペイン移動は `Ctrl-q` のあとの `hjkl` です。コンソールでは、その移動以外のキーはシェルに渡します。`x` や `d` のような文字の編集は、編集画面だけです。
+基準は Vim / Neovim の初期キーです。半ページは `Ctrl-d` / `Ctrl-u`、タブ移動は `gt` / `gT`、タブの開閉は `Space t` / `Space q` / `Space Q`、履歴は `Ctrl-o` / `Ctrl-i` です。ペイン移動は WezTerm と同じ `Ctrl-q` のあとの `hjkl` です。閲覧画面、Hearth Home、Terminal のコンソールでも、ペイン移動は `Ctrl-q` のあとの `hjkl` です。コンソールのペインでは、葉を選んだあと Terminal 自身の入力へフォーカスを移します。コンソールでは、その移動以外のキーはシェルに渡します。`x` や `d` のような文字の編集は、編集画面だけです。
 
 ---
 

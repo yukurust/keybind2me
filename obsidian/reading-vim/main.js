@@ -29,6 +29,18 @@ module.exports = class ReadingVimPlugin extends Plugin {
     const onKeydown = (evt) => this.onKeydown(evt);
     window.addEventListener("keydown", onKeydown, true);
     this.register(() => window.removeEventListener("keydown", onKeydown, true));
+    for (const [id, direction] of [
+      ["focus-left", "left"],
+      ["focus-down", "bottom"],
+      ["focus-up", "top"],
+      ["focus-right", "right"],
+    ]) {
+      this.addCommand({
+        id,
+        name: `Focus pane ${direction}`,
+        callback: () => this.focusDirection(direction),
+      });
+    }
   }
 
   clearChord() {
@@ -61,6 +73,21 @@ module.exports = class ReadingVimPlugin extends Plugin {
     this.app.commands.executeCommandById(id);
   }
 
+  focusDirection(direction) {
+    const workspace = this.app.workspace;
+    const current = workspace.activeLeaf?.view;
+    const next = workspace.getAdjacentLeafInDirection?.(workspace.activeLeaf, direction);
+    if (!next) return;
+    if (String(current?.getViewType?.() ?? "").toLowerCase().includes("terminal")) {
+      const active = document.activeElement;
+      if (active instanceof HTMLElement) active.blur();
+    }
+    workspace.setActiveLeaf(next, { focus: true });
+    const view = next.view;
+    if (typeof view?.focus === "function") view.focus();
+    view?.emulator?.terminal?.focus?.();
+  }
+
   terminalView(evt) {
     const view = this.app.workspace.activeLeaf?.view;
     if (!view?.containerEl?.contains(evt.target)) return null;
@@ -68,12 +95,6 @@ module.exports = class ReadingVimPlugin extends Plugin {
     if (type.toLowerCase().includes("terminal")) return view;
     if (evt.target instanceof Element && evt.target.closest(".xterm")) return view;
     return null;
-  }
-
-  leaveTerminal(direction) {
-    const active = document.activeElement;
-    if (active instanceof HTMLElement) active.blur();
-    this.run(`editor:focus-${direction}`);
   }
 
   onTerminalKey(evt) {
@@ -84,7 +105,7 @@ module.exports = class ReadingVimPlugin extends Plugin {
       if (!direction) return;
       evt.preventDefault();
       evt.stopPropagation();
-      this.leaveTerminal(direction);
+      this.focusDirection(direction);
       return;
     }
     if (evt.ctrlKey && key.toLowerCase() === "q") {
@@ -111,7 +132,7 @@ module.exports = class ReadingVimPlugin extends Plugin {
       if (!direction) return;
       evt.preventDefault();
       evt.stopPropagation();
-      this.run(`editor:focus-${direction}`);
+      this.focusDirection(direction);
       return;
     }
     if (this.chord === "g") {

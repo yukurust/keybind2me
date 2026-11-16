@@ -53,7 +53,7 @@ alt-shift-l = 'move right'
 
 # フローティング切り替え・アコーディオン・フルスクリーン・サイズ変更
 alt-f = 'layout floating tiling'
-alt-shift-f = 'layout tiles h_accordion'
+alt-shift-m = 'layout tiles h_accordion'
 alt-m = 'fullscreen'
 alt-minus = 'resize smart -50'
 alt-semicolon = 'resize smart +50'

@@ -64,10 +64,10 @@ nmap <Space>Q :reopenTab<CR>
 
 noremap Y y$
 
-exmap focusLeft obcommand editor:focus-left
-exmap focusDown obcommand editor:focus-bottom
-exmap focusUp obcommand editor:focus-top
-exmap focusRight obcommand editor:focus-right
+exmap focusLeft obcommand keybind2me-reading-vim:focus-left
+exmap focusDown obcommand keybind2me-reading-vim:focus-down
+exmap focusUp obcommand keybind2me-reading-vim:focus-up
+exmap focusRight obcommand keybind2me-reading-vim:focus-right
 nmap <C-q>h :focusLeft<CR>
 nmap <C-q>j :focusDown<CR>
 nmap <C-q>k :focusUp<CR>

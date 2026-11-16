@@ -339,7 +339,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                         CheatSheetItem(key: "H/J/K/L", detail: "フォーカス移動"),
                         CheatSheetItem(key: "Shift+H/J/K/L", detail: "窓位置入れ替え"),
                         CheatSheetItem(key: "- / ; / Shift+-", detail: "サイズ/等倍"),
-                        CheatSheetItem(key: "F / M", detail: "Float / Full"),
+                        CheatSheetItem(key: "F / ⇧F / M", detail: "浮く / アコーディオン / 全画面"),
                     ]
                 ),
                 CheatSheetSection(

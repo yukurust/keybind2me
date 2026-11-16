@@ -82,6 +82,14 @@ echo "==> Configuring Obsidian vimrc..."
 chmod +x "${TARGET_DIR}/obsidian/apply.sh"
 "${TARGET_DIR}/obsidian/apply.sh"
 
+# 8b. Homerow (click and scroll the focused window)
+echo "==> Configuring Homerow..."
+if [[ ! -d /Applications/Homerow.app ]]; then
+    brew install --cask homerow
+fi
+chmod +x "${TARGET_DIR}/homerow/apply.sh"
+"${TARGET_DIR}/homerow/apply.sh"
+
 # 9. Reload AeroSpace and start JankyBorders if running
 if command -v aerospace >/dev/null 2>&1; then
     echo "==> Reloading AeroSpace configuration..."

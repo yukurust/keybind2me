@@ -27,6 +27,10 @@
 - **Vimium (Zen)**
   - キー割り当てを [`vimium/key-mappings`](vimium/key-mappings) で管理
   - Zen を終了した状態で `vimium/apply.sh` を実行すると、その内容が Vimium に入る
+- **Homerow**
+  - AeroSpace でフォーカスした前面ウィンドウのボタンとスクロールをキーボードで操作する
+  - クリックは `Command-Shift-Space`、スクロールは `Command-Shift-J` のあと `hjkl`
+  - 設定は [`homerow/com.superultra.Homerow.plist`](homerow/com.superultra.Homerow.plist)。`homerow/apply.sh` で読み込む
 - **Obsidian Vim**
   - 編集画面は Obsidian 標準の Vim モードと [`obsidian/.obsidian.vimrc`](obsidian/.obsidian.vimrc)
   - 閲覧画面と Hearth Home のスクロール、タブ、ペインは [`obsidian/reading-vim`](obsidian/reading-vim)
@@ -50,6 +54,7 @@ curl -fsSL https://raw.githubusercontent.com/yukurust/keybind2me/main/install.sh
 5. AeroSpace の設定を即時リロードし、`borders` を起動
 6. `vimium/key-mappings` を `~/.config/aerospace/vimium-key-mappings` にリンクし、Zen が終了していれば Vimium に書き込む
 7. `obsidian/.obsidian.vimrc` を各保管庫の `.obsidian.vimrc` にリンクする
+8. Homerow をインストールし、[`homerow/com.superultra.Homerow.plist`](homerow/com.superultra.Homerow.plist) を設定へ読み込む
 
 ---
 
@@ -116,6 +121,18 @@ obsidian/apply.sh
 | `Option + Shift + M` | タイル ⇄ 横アコーディオン 切り替え |
 | `Option + M` | フルスクリーン切り替え |
 
+## Homerow
+
+AeroSpace で選んだ前面ウィンドウの中を操作します。Zen のページ内は Vimium のままです。
+
+| キー | 動作 |
+| :--- | :--- |
+| `Command + Shift + Space` | ボタンに文字を付けてクリック |
+| `Command + Shift + J` | スクロール。`j` / `k`、`d` / `u`、`gg` / `G` |
+| `Esc` | 終了 |
+
+設定を変えたあとは `homerow/apply.sh` を実行します。初回起動時に、システム設定の「プライバシーとセキュリティ > アクセシビリティ」で Homerow を許可します。
+
 ---
 
 ## 📁 Repository Structure
@@ -134,6 +151,9 @@ keybind2me/
 │   ├── .obsidian.vimrc # 編集画面の追加割り当て
 │   ├── reading-vim/    # 閲覧画面と Hearth Home のスクロール、タブ、ペイン
 │   └── apply.sh        # 保管庫へ vimrc と閲覧用プラグインをリンクする
+├── homerow/
+│   ├── com.superultra.Homerow.plist # クリック、スクロール、ラベルの大きさ
+│   └── apply.sh        # 上の設定を Homerow へ読み込む
 ├── wezterm/
 │   ├── wezterm.lua      # WezTerm メイン設定
 │   └── keybinds.lua     # WezTerm キーバインド設定

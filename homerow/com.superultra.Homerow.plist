@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>launch-at-login</key>
+	<true/>
+	<key>show-menubar-icon</key>
+	<true/>
+	<key>enable-hyper-key</key>
+	<false/>
+	<key>hide-labels-when-nothing-is-searched</key>
+	<false/>
+	<key>is-auto-click-enabled</key>
+	<true/>
+	<key>label-font-size</key>
+	<real>14</real>
+	<key>theme-id</key>
+	<string>dark</string>
+	<key>soundEffectVolume</key>
+	<real>0.4</real>
+	<key>is-scroll-shortcuts-enabled</key>
+	<true/>
+	<key>scroll-show-numbers</key>
+	<true/>
+	<key>scroll-keys</key>
+	<string>hjkl</string>
+	<key>search-shortcut</key>
+	<string>⇧⌘Space</string>
+	<key>scroll-shortcut</key>
+	<string>⇧⌘J</string>
+</dict>
+</plist>

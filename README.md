@@ -152,7 +152,7 @@ keybind2me/
 │   ├── reading-vim/    # 閲覧画面と Hearth Home のスクロール、タブ、ペイン
 │   └── apply.sh        # 保管庫へ vimrc と閲覧用プラグインをリンクする
 ├── homerow/
-│   ├── com.superultra.Homerow.plist # クリックとスクロールの設定
+│   ├── com.superultra.Homerow.plist # クリック、スクロール、ラベルの大きさ
 │   └── apply.sh        # 上の設定を Homerow へ読み込む
 ├── wezterm/
 │   ├── wezterm.lua      # WezTerm メイン設定

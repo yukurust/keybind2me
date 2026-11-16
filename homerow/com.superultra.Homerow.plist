@@ -11,7 +11,13 @@
 	<key>hide-labels-when-nothing-is-searched</key>
 	<false/>
 	<key>is-auto-click-enabled</key>
-	<false/>
+	<true/>
+	<key>label-font-size</key>
+	<real>14</real>
+	<key>theme-id</key>
+	<string>dark</string>
+	<key>soundEffectVolume</key>
+	<real>0.4</real>
 	<key>is-scroll-shortcuts-enabled</key>
 	<true/>
 	<key>scroll-show-numbers</key>

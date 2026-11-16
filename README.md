@@ -45,7 +45,7 @@ curl -fsSL https://raw.githubusercontent.com/yukurust/keybind2me/main/install.sh
 ### インストーラが行う処理
 1. `~/repos/github/keybind2me` に本リポジトリを clone（または最新化）
 2. `~/.aerospace.toml` および `~/.config/wezterm/` にシンボリックリンクを作成
-3. `hud.swift` / `cheatsheet.swift` をネイティブコンパイルして `~/.config/aerospace/` に配置
+3. `hud.swift` / `cheatsheet.swift` をネイティブコンパイルして `~/.config/aerospace/` に配置し、チートシートをログイン時起動の LaunchAgent に登録
 4. `JankyBorders` (`borders`) をインストール（Homebrew 失敗時はソースから自動ビルド）
 5. AeroSpace の設定を即時リロードし、`borders` を起動
 6. `vimium/key-mappings` を `~/.config/aerospace/vimium-key-mappings` にリンクし、Zen が終了していれば Vimium に書き込む
@@ -68,16 +68,16 @@ curl -fsSL https://raw.githubusercontent.com/yukurust/keybind2me/main/install.sh
 - **マウス追従**: `Option + H/J/K/L` などでフォーカスを移動すると、マウスカーソルが自動で移動先ウィンドウの中央（`move-mouse window-lazy-center`）へ追従します。
 
 ### 2. チートシートウィジェットの起動・終了
-Dock の左右に、同じガラス枠でキーバインド一覧を表示します。左が AeroSpace / WezTerm、右が Vimium です。
+Dock の左右に、同じガラス枠でキーバインド一覧を表示します。左が AeroSpace / WezTerm、右が Vimium です。ログイン時に launchd が `~/.config/aerospace/cheatsheet` を起動します。定義は [`cheatsheet/com.yukurust.keybind2me.cheatsheet.plist`](cheatsheet/com.yukurust.keybind2me.cheatsheet.plist) で、インストール先は `~/Library/LaunchAgents/` です。
 
 ```bash
-# 起動
-nohup ~/.config/aerospace/cheatsheet >/dev/null 2>&1 &
+# 今すぐ起動
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.yukurust.keybind2me.cheatsheet.plist
 
-# 終了
-killall cheatsheet
+# 終了（次のログインまでは起動しない）
+launchctl bootout gui/$(id -u)/com.yukurust.keybind2me.cheatsheet
 ```
-※ Dock のアイコン数やサイズ変更、`システム設定 > 外観 > Liquid Glass` の透明度変更に自動で追従します。右側の文言は `vimium/key-mappings` 先頭の `sheet:` 行です。
+落ちたときは launchd が起動し直します。`killall cheatsheet` だとすぐ戻り、止まったままにはなりません。Dock のアイコン数やサイズ変更、`システム設定 > 外観 > Liquid Glass` の透明度変更に自動で追従します。右側の文言は `vimium/key-mappings` 先頭の `sheet:` 行です。
 
 ### 3. Vimium のキーを変える
 [`vimium/key-mappings`](vimium/key-mappings) を編集します。`unmapAll` より下に書いた割り当てだけが有効です。反映するには Zen を終了してから次を実行します。
